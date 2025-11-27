@@ -1,0 +1,15 @@
+# Cloudflare Pages Configuration
+
+# Build Configuration
+[build]
+command = "pnpm install && pnpm build"
+publish = ".output"
+
+# Environment Variables (這些需要在 Dashboard 設定)
+[build.environment]
+NODE_VERSION = "20"
+
+# Deployment Compatibility
+[deployment]
+compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2025-11-25"

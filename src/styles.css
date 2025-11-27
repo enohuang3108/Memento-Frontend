@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  /* Textured Blue Palette */
+  --color-primary: #0F4C81; /* Classic Blue */
+  --color-primary-hover: #1E3A8A; /* Darker Blue */
+  --color-secondary: #F8FAFC; /* Slate 50 */
+  --color-accent: #38BDF8; /* Sky 400 */
+  --color-text-main: #0F172A; /* Slate 900 */
+  --color-text-muted: #64748B; /* Slate 500 */
+
+  /* Fonts */
+  --font-heading: "Outfit", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  /* Animations */
+  --animate-fade-in: fade-in 0.6s ease-out forwards;
+  --animate-slide-up: slide-up 0.8s ease-out forwards;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Utilities for Modern Effects */
+@utility card-modern {
+  @apply bg-white rounded-xl shadow-md border border-slate-200/60 backdrop-blur-sm;
+}
+
+@utility btn-primary {
+  @apply px-6 py-3 rounded-lg font-heading font-medium text-white bg-primary shadow-sm hover:bg-primary-hover hover:shadow-md transition-all duration-300 active:scale-[0.98];
+}
+
+@utility text-heading {
+  @apply font-heading text-text-main font-bold tracking-tight;
+}
+
+@utility card-cute {
+  @apply bg-white rounded-2xl shadow-md border border-primary/10 backdrop-blur-sm;
+}
+
+body {
+  @apply m-0 bg-secondary text-text-main font-body antialiased;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
