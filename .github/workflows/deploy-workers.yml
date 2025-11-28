@@ -3,7 +3,7 @@ name: Deploy Workers
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   deploy:
@@ -63,9 +63,9 @@ jobs:
           echo "**Environment**: \`${{ env.ENVIRONMENT }}\`" >> $GITHUB_STEP_SUMMARY
 
           if [ "${{ env.ENVIRONMENT }}" == "beta" ]; then
-            echo "**Backend API**: https://beta.memento-api.oddlabcc.cc" >> $GITHUB_STEP_SUMMARY
+            echo "**Backend API**: https://beta.memento-api.oddlab.cc" >> $GITHUB_STEP_SUMMARY
           else
-            echo "**Backend API**: https://memento-api.oddlabcc.cc" >> $GITHUB_STEP_SUMMARY
+            echo "**Backend API**: https://memento-api.oddlab.cc" >> $GITHUB_STEP_SUMMARY
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
