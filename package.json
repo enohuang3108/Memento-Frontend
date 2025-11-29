@@ -9,6 +9,8 @@
     "build": "vite build",
     "build:beta": "vite build --mode beta",
     "build:production": "vite build --mode production",
+    "deploy:beta": "pnpm run build:beta && wrangler deploy --env beta",
+    "deploy:production": "pnpm run build:production && wrangler deploy",
     "serve": "vite preview",
     "cf-typegen": "wrangler types",
     "test": "vitest run",
