@@ -8,7 +8,7 @@
  * - Health check endpoint
  */
 
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 const TEST_DRIVE_FOLDER_ID = '1QvBCmxEWaJAzY0oxmaXkvTQFmxenQ2Y6'
 
@@ -25,7 +25,7 @@ test.describe('Health Check', () => {
 })
 
 test.describe('Event Management', () => {
-  let testActivityId: string
+
 
   test('should create new event', async ({ request }) => {
     const response = await request.post('/events', {
@@ -44,8 +44,7 @@ test.describe('Event Management', () => {
     expect(data.event.status).toBe('active')
     expect(data.event.driveFolderId).toBe(TEST_DRIVE_FOLDER_ID)
 
-    // Store for later tests
-    testActivityId = data.event.id
+
   })
 
   test('should reject event creation without driveFolderId', async ({ request }) => {
