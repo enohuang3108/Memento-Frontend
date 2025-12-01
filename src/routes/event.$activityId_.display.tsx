@@ -5,6 +5,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { ArrowLeft, Maximize } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { DanmakuCanvas } from '../components/DanmakuCanvas'
 import { PhotoWall } from '../components/PhotoWall'
@@ -137,7 +138,7 @@ function DisplayPage() {
     )
   }
 
-  const { event } = data
+
 
   return (
     <div className="relative h-screen w-screen bg-secondary overflow-hidden">
@@ -146,48 +147,45 @@ function DisplayPage() {
            style={{ backgroundImage: 'radial-gradient(#FCD34D 2px, transparent 2px)', backgroundSize: '30px 30px' }}>
       </div>
 
-      {/* Header - only show when not fullscreen */}
+      {/* Back Button */}
       {!isFullscreen && (
-        <div className="absolute top-0 left-0 right-0 z-10 bg-white/80 backdrop-blur-md p-4 border-b border-primary/20 shadow-sm">
-          <div className="flex items-center justify-between max-w-screen-2xl mx-auto">
-            <div className="flex items-center gap-6">
-              <h2 className="text-xl font-heading font-bold text-text-main tracking-tight">
-                Memento
-              </h2>
-              <div className="h-6 w-px bg-slate-300"></div>
-              <div>
-                <h1 className="text-2xl font-heading font-bold text-text-main">
-                  {event.title || '活動照片牆'}
-                </h1>
-                <div className="flex items-center gap-4 text-sm text-text-muted font-bold">
-                  <span>📷 {photos.length} 張照片</span>
-                  <span className={isConnected ? 'text-green-600' : 'text-red-500'}>
-                    ● {isConnected ? '已連線' : '未連線'}
-                  </span>
-                </div>
-              </div>
-            </div>
+        <button
+          onClick={() => window.history.back()}
+          className="absolute top-4 left-4 z-20 bg-black/30 text-white hover:bg-white hover:text-black backdrop-blur-sm p-2 rounded-full transition-colors"
+          title="返回"
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+      )}
 
-            <button
-              onClick={toggleFullscreen}
-              className="btn-cute py-2 px-4 text-sm"
-            >
-              🖥️ 全螢幕
-            </button>
-          </div>
+      {/* Fullscreen Disconnection Indicator */}
+      {isFullscreen && !isConnected && (
+        <div className="absolute top-4 left-4 z-20">
+          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
         </div>
       )}
 
+      {/* Fullscreen Toggle Button (moved to top-right since header is gone) */}
+      {!isFullscreen && (
+        <button
+          onClick={toggleFullscreen}
+          className="absolute top-4 right-4 z-20 bg-black/30 text-white hover:bg-white hover:text-black backdrop-blur-sm p-2 rounded-full transition-colors"
+          title="全螢幕"
+        >
+          <Maximize className="w-6 h-6" />
+        </button>
+      )}
+
       {/* Photo Wall */}
-      <div className={isFullscreen ? 'h-full' : 'h-full pt-20'}>
-        <PhotoWall photos={photos} mode="slideshow" />
+      <div className="h-full">
+        <PhotoWall isFullscreen={isFullscreen} photos={photos} mode="slideshow" />
       </div>
 
       {/* Danmaku Canvas Overlay */}
       <DanmakuCanvas messages={danmakuMessages} />
 
       {/* Connection Status Indicator */}
-      {!isConnected && (
+      {!isConnected && !isFullscreen && (
         <div className="absolute bottom-4 left-4 px-4 py-2 bg-red-500/90 text-white rounded-xl shadow-lg font-bold animate-pulse">
           ⚠️ 連線中斷,嘗試重新連線...
         </div>
@@ -200,20 +198,6 @@ function DisplayPage() {
             <div className="text-8xl mb-6 animate-bounce-slight">📸</div>
             <p className="text-3xl font-heading font-bold">等待照片上傳...</p>
             <p className="text-xl mt-2 font-body">掃描 QR Code 開始分享照片</p>
-          </div>
-        </div>
-      )}
-
-      {/* Debug Info - Remove in production */}
-      {!isFullscreen && (
-        <div className="absolute bottom-4 right-4 bg-black/80 text-white text-xs p-3 rounded-lg font-mono max-w-md">
-          <div>Activity ID: {activityId}</div>
-          <div>Session ID: {sessionId.substring(0, 8)}...</div>
-          <div>WebSocket: {isConnected ? '✅ Connected' : '❌ Disconnected'}</div>
-          <div>Photos Count: {photos.length}</div>
-          <div>Event Title: {event.title || 'N/A'}</div>
-          <div className="mt-2 text-yellow-300">
-            Check browser console for detailed logs
           </div>
         </div>
       )}

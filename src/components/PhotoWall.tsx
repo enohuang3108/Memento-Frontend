@@ -7,22 +7,28 @@ import { useEffect, useRef, useState } from 'react'
 import type { Photo } from '../lib/api'
 
 interface PhotoWallProps {
+  isFullscreen: boolean
   photos: Photo[]
   mode?: 'grid' | 'slideshow'
   slideshowInterval?: number // in milliseconds
 }
 
 export function PhotoWall({
+  isFullscreen,
   photos,
   mode = 'grid',
   slideshowInterval = 5000
 }: PhotoWallProps) {
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
+  const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set())
   const [currentIndex, setCurrentIndex] = useState(0)
   const observerRef = useRef<IntersectionObserver | null>(null)
 
+  // Filter out failed photos
+  const validPhotos = photos.filter(p => !failedPhotoIds.has(p.id))
+
   // Sort photos by upload time (newest first)
-  const sortedPhotos = [...photos].sort((a, b) => b.uploadedAt - a.uploadedAt)
+  const sortedPhotos = [...validPhotos].sort((a, b) => b.uploadedAt - a.uploadedAt)
 
   // Setup Intersection Observer for lazy loading (Grid mode only)
   useEffect(() => {
@@ -55,21 +61,36 @@ export function PhotoWall({
 
   // Slideshow timer
   useEffect(() => {
-    if (mode !== 'slideshow' || photos.length === 0) return
+    if (mode !== 'slideshow' || sortedPhotos.length === 0) return
 
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % photos.length)
+      setCurrentIndex((prev) => (prev + 1) % sortedPhotos.length)
     }, slideshowInterval)
 
     return () => clearInterval(timer)
-  }, [mode, photos.length, slideshowInterval])
+  }, [mode, sortedPhotos.length, slideshowInterval])
 
   // Reset index if photos change significantly or mode changes
   useEffect(() => {
-    if (currentIndex >= photos.length) {
+    if (currentIndex >= sortedPhotos.length) {
       setCurrentIndex(0)
     }
-  }, [photos.length])
+  }, [sortedPhotos.length])
+
+  // Prefetch next images
+  useEffect(() => {
+    if (mode !== 'slideshow' || sortedPhotos.length === 0) return
+
+    const PREFETCH_COUNT = 3
+    for (let i = 1; i <= PREFETCH_COUNT; i++) {
+      const nextIndex = (currentIndex + i) % sortedPhotos.length
+      const photo = sortedPhotos[nextIndex]
+      if (photo) {
+        const img = new Image()
+        img.src = photo.fullUrl
+      }
+    }
+  }, [currentIndex, mode, sortedPhotos])
 
   if (photos.length === 0) {
     return null
@@ -81,21 +102,6 @@ export function PhotoWall({
       <div className="h-full w-full relative bg-black overflow-hidden">
         {/* Render current and next photos for cross-fade */}
         {sortedPhotos.map((photo, index) => {
-          // Only render the current, previous, and next photos to save resources
-          // But for smooth cross-fade we really just need to control opacity
-          // If list is huge, this might be heavy, but for < 100 photos it's fine.
-          // Optimization: Only render if index is close to currentIndex
-
-          // Optimization: Only render if index is close to currentIndex
-
-          // Keep the previous one visible while the new one fades in?
-          // Actually, standard cross-fade: All absolute, only active has opacity 1.
-          // But we need z-index management or just simple opacity transition.
-
-          // Simple approach: Render all, toggle opacity.
-          // Optimization: Only render active and the one fading out?
-          // Let's just render all but only load the ones near current index.
-
           const isVisible = index === currentIndex
 
           return (
@@ -110,23 +116,18 @@ export function PhotoWall({
                 alt={`Photo ${index + 1}`}
                 className="max-w-full max-h-full object-contain"
                 loading={Math.abs(index - currentIndex) <= 1 ? "eager" : "lazy"}
-                onError={(e) => {
-                  console.error(`Failed to load image: ${photo.fullUrl}`)
-                  e.currentTarget.style.display = 'none'
-                  // Show a fallback text
-                  const parent = e.currentTarget.parentElement
-                  if (parent) {
-                    const errorMsg = document.createElement('div')
-                    errorMsg.className = 'text-red-500 font-bold text-xl'
-                    errorMsg.innerText = 'Image Failed to Load'
-                    parent.appendChild(errorMsg)
-                  }
+                onError={() => {
+                  console.warn(`Failed to load image: ${photo.fullUrl}`)
+                  setFailedPhotoIds(prev => new Set([...prev, photo.id]))
                 }}
               />
-              {/* Debug Info (Only visible if image fails or for debugging) */}
-              {isVisible && (
-                <div className="absolute top-20 left-4 text-white/50 text-xs font-mono bg-black/50 p-2 rounded pointer-events-none">
+              {/* Debug Info */}
+              {isVisible && !isFullscreen && (
+                <div className="absolute top-20 left-4 text-white/50 text-xs font-mono bg-black/50 p-2 rounded pointer-events-none z-50">
                   Debug: {index + 1}/{sortedPhotos.length}<br/>
+                  Total: {photos.length}<br/>
+                  Valid: {validPhotos.length}<br/>
+                  Failed: {failedPhotoIds.size}<br/>
                   ID: {photo.id}<br/>
                   URL: {photo.fullUrl.substring(0, 30)}...
                 </div>
@@ -134,23 +135,6 @@ export function PhotoWall({
             </div>
           )
         })}
-
-        {/* Progress Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 flex gap-2">
-          {sortedPhotos.map((_, idx) => (
-            <div
-              key={idx}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                idx === currentIndex ? 'w-8 bg-white' : 'w-1.5 bg-white/30'
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* Count Badge */}
-        <div className="absolute top-4 right-4 z-20 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-white/80 text-xs font-mono border border-white/10">
-          {currentIndex + 1} / {photos.length}
-        </div>
       </div>
     )
   }
@@ -165,6 +149,7 @@ export function PhotoWall({
             photo={photo}
             observer={observerRef.current}
             isLoaded={loadedImages.has(photo.id)}
+            onFail={() => setFailedPhotoIds(prev => new Set([...prev, photo.id]))}
           />
         ))}
       </div>
@@ -176,9 +161,10 @@ interface PhotoItemProps {
   photo: Photo
   observer: IntersectionObserver | null
   isLoaded: boolean
+  onFail: () => void
 }
 
-function PhotoItem({ photo, observer, isLoaded }: PhotoItemProps) {
+function PhotoItem({ photo, observer, isLoaded, onFail }: PhotoItemProps) {
   const imgRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
@@ -207,6 +193,9 @@ function PhotoItem({ photo, observer, isLoaded }: PhotoItemProps) {
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           loading="lazy"
+          onError={() => {
+            onFail()
+          }}
         />
 
         {/* Loading placeholder */}
