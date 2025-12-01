@@ -9,5 +9,11 @@
   "vars": {
     "VITE_API_URL": "https://beta.memento-api.oddlab.cc",
     "VITE_WS_URL": "wss://beta.memento-api.oddlab.cc"
-  }
+  },
+  "routes": [
+    {
+      "pattern": "beta.memento.oddlab.cc",
+      "custom_domain": true
+    }
+  ]
 }
