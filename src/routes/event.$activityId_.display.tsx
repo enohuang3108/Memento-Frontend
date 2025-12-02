@@ -12,6 +12,7 @@ import { PhotoWall } from '../components/PhotoWall'
 import { getEvent, getWebSocketUrl, type Photo } from '../lib/api'
 import { getOrCreateSessionId } from '../lib/session'
 import { useWebSocket, type ServerMessage } from '../lib/websocket'
+import { EventNotFound } from '@/components/EventNotFound'
 
 export const Route = createFileRoute('/event/$activityId_/display')({
   component: DisplayPage,
@@ -128,17 +129,8 @@ function DisplayPage() {
   }
 
   if (!data) {
-    return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center">
-        <div className="text-center text-text-main">
-          <div className="text-6xl mb-4">❌</div>
-          <h1 className="text-3xl mb-2 font-heading font-bold">找不到活動</h1>
-        </div>
-      </div>
-    )
+    return <EventNotFound />
   }
-
-
 
   return (
     <div className="relative h-screen w-screen bg-secondary overflow-hidden">

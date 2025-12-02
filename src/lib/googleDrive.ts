@@ -76,11 +76,29 @@ async function compressImage(file: File, maxSize: number = 1920): Promise<File> 
         )
       }
 
-      img.onerror = () => reject(new Error('Failed to load image'))
+      img.onerror = (e) => {
+        console.error('[googleDrive] Failed to load image for compression:', {
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          error: e,
+          errorType: typeof e === 'object' && e !== null && 'type' in e ? (e as Event).type : 'unknown'
+        })
+        reject(new Error('Failed to load image'))
+      }
       img.src = e.target?.result as string
     }
 
-    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.onerror = (e) => {
+      console.error('[googleDrive] Failed to read file for compression:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        error: e,
+        errorType: typeof e === 'object' && e !== null && 'type' in e ? (e as Event).type : 'unknown'
+      })
+      reject(new Error('Failed to read file'))
+    }
     reader.readAsDataURL(file)
   })
 }
@@ -99,11 +117,29 @@ async function getImageDimensions(file: File): Promise<{ width: number; height: 
         resolve({ width: img.width, height: img.height })
       }
 
-      img.onerror = () => reject(new Error('Failed to load image'))
+      img.onerror = (e) => {
+        console.error('[googleDrive] Failed to load image for dimensions:', {
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          error: e,
+          errorType: typeof e === 'object' && e !== null && 'type' in e ? (e as Event).type : 'unknown'
+        })
+        reject(new Error('Failed to load image'))
+      }
       img.src = e.target?.result as string
     }
 
-    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.onerror = (e) => {
+      console.error('[googleDrive] Failed to read file for dimensions:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        error: e,
+        errorType: typeof e === 'object' && e !== null && 'type' in e ? (e as Event).type : 'unknown'
+      })
+      reject(new Error('Failed to read file'))
+    }
     reader.readAsDataURL(file)
   })
 }

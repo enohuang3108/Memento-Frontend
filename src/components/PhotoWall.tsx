@@ -24,11 +24,116 @@ export function PhotoWall({
   const [currentIndex, setCurrentIndex] = useState(0)
   const observerRef = useRef<IntersectionObserver | null>(null)
 
+  // Dual-queue system for fair playback
+  const [priorityQueue, setPriorityQueue] = useState<Photo[]>([])
+  const [regularQueue, setRegularQueue] = useState<Photo[]>([])
+  const [playedPhotoIds, setPlayedPhotoIds] = useState<Set<string>>(new Set())
+  const previousPhotoCount = useRef(0)
+
   // Filter out failed photos
   const validPhotos = photos.filter(p => !failedPhotoIds.has(p.id))
 
-  // Sort photos by upload time (newest first)
-  const sortedPhotos = [...validPhotos].sort((a, b) => b.uploadedAt - a.uploadedAt)
+  // Fisher-Yates shuffle algorithm for fair randomization
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled
+  }
+
+  // Detect new photos and add to priority queue
+  useEffect(() => {
+    if (mode !== 'slideshow') return
+
+    const currentPhotoCount = validPhotos.length
+
+    // Initial load: add all photos to regular queue (shuffled)
+    if (previousPhotoCount.current === 0 && currentPhotoCount > 0) {
+      console.log('[PhotoWall] Initial load:', currentPhotoCount, 'photos')
+      setRegularQueue(shuffleArray(validPhotos))
+      setPlayedPhotoIds(new Set())
+    }
+    // New photos detected: add to priority queue
+    else if (currentPhotoCount > previousPhotoCount.current) {
+      const newPhotos = validPhotos.filter(p => !playedPhotoIds.has(p.id))
+      if (newPhotos.length > 0) {
+        console.log('[PhotoWall] New photos detected:', newPhotos.length)
+        setPriorityQueue(prev => [...newPhotos, ...prev])
+      }
+    }
+
+    previousPhotoCount.current = currentPhotoCount
+  }, [validPhotos, mode])
+
+  // Combined queue for slideshow (priority first, then regular)
+  const playbackQueue = mode === 'slideshow'
+    ? [...priorityQueue, ...regularQueue]
+    : validPhotos.sort((a, b) => b.uploadedAt - a.uploadedAt) // Grid mode: newest first
+
+  // Slideshow timer with queue management
+  useEffect(() => {
+    if (mode !== 'slideshow' || playbackQueue.length === 0) return
+
+    const timer = setInterval(() => {
+      setCurrentIndex((prevIndex) => {
+        const currentPhoto = playbackQueue[prevIndex]
+
+        // Mark current photo as played and move to regular queue
+        if (currentPhoto) {
+          setPlayedPhotoIds(prev => new Set([...prev, currentPhoto.id]))
+
+          // If this photo was in priority queue, remove it
+          if (priorityQueue.some(p => p.id === currentPhoto.id)) {
+            setPriorityQueue(prev => prev.filter(p => p.id !== currentPhoto.id))
+            // Add to regular queue if not already there
+            if (!regularQueue.some(p => p.id === currentPhoto.id)) {
+              setRegularQueue(prev => [...prev, currentPhoto])
+            }
+          }
+        }
+
+        const nextIndex = prevIndex + 1
+
+        // If we've reached the end of the queue
+        if (nextIndex >= playbackQueue.length) {
+          // If priority queue is empty, reshuffle regular queue for fair rotation
+          if (priorityQueue.length === 0 && regularQueue.length > 0) {
+            console.log('[PhotoWall] Reshuffling regular queue for fair rotation')
+            setRegularQueue(shuffleArray(regularQueue))
+          }
+          return 0 // Start from beginning
+        }
+
+        return nextIndex
+      })
+    }, slideshowInterval)
+
+    return () => clearInterval(timer)
+  }, [mode, playbackQueue.length, slideshowInterval, priorityQueue.length, regularQueue.length])
+
+  // Reset index if queue changes significantly
+  useEffect(() => {
+    if (currentIndex >= playbackQueue.length && playbackQueue.length > 0) {
+      setCurrentIndex(0)
+    }
+  }, [playbackQueue.length])
+
+  // Prefetch next images
+  useEffect(() => {
+    if (mode !== 'slideshow' || playbackQueue.length === 0) return
+
+    const PREFETCH_COUNT = 3
+    for (let i = 1; i <= PREFETCH_COUNT; i++) {
+      const nextIndex = (currentIndex + i) % playbackQueue.length
+      const photo = playbackQueue[nextIndex]
+      if (photo) {
+        const img = new Image()
+        img.src = photo.fullUrl
+      }
+    }
+  }, [currentIndex, mode, playbackQueue])
 
   // Setup Intersection Observer for lazy loading (Grid mode only)
   useEffect(() => {
@@ -59,39 +164,6 @@ export function PhotoWall({
     }
   }, [mode])
 
-  // Slideshow timer
-  useEffect(() => {
-    if (mode !== 'slideshow' || sortedPhotos.length === 0) return
-
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % sortedPhotos.length)
-    }, slideshowInterval)
-
-    return () => clearInterval(timer)
-  }, [mode, sortedPhotos.length, slideshowInterval])
-
-  // Reset index if photos change significantly or mode changes
-  useEffect(() => {
-    if (currentIndex >= sortedPhotos.length) {
-      setCurrentIndex(0)
-    }
-  }, [sortedPhotos.length])
-
-  // Prefetch next images
-  useEffect(() => {
-    if (mode !== 'slideshow' || sortedPhotos.length === 0) return
-
-    const PREFETCH_COUNT = 3
-    for (let i = 1; i <= PREFETCH_COUNT; i++) {
-      const nextIndex = (currentIndex + i) % sortedPhotos.length
-      const photo = sortedPhotos[nextIndex]
-      if (photo) {
-        const img = new Image()
-        img.src = photo.fullUrl
-      }
-    }
-  }, [currentIndex, mode, sortedPhotos])
-
   if (photos.length === 0) {
     return null
   }
@@ -101,7 +173,7 @@ export function PhotoWall({
     return (
       <div className="h-full w-full relative bg-black overflow-hidden">
         {/* Render current and next photos for cross-fade */}
-        {sortedPhotos.map((photo, index) => {
+        {playbackQueue.map((photo, index) => {
           const isVisible = index === currentIndex
 
           return (
@@ -116,20 +188,27 @@ export function PhotoWall({
                 alt={`Photo ${index + 1}`}
                 className="max-w-full max-h-full object-contain"
                 loading={Math.abs(index - currentIndex) <= 1 ? "eager" : "lazy"}
-                onError={() => {
-                  console.warn(`Failed to load image: ${photo.fullUrl}`)
+                onError={(e) => {
+                  console.error('[PhotoWall] Failed to load image:', {
+                    photoId: photo.id,
+                    url: photo.fullUrl,
+                    error: e,
+                    errorType: e.type,
+                    target: (e.target as HTMLImageElement)?.src
+                  })
                   setFailedPhotoIds(prev => new Set([...prev, photo.id]))
                 }}
               />
               {/* Debug Info */}
               {isVisible && !isFullscreen && (
                 <div className="absolute top-20 left-4 text-white/50 text-xs font-mono bg-black/50 p-2 rounded pointer-events-none z-50">
-                  Debug: {index + 1}/{sortedPhotos.length}<br/>
-                  Total: {photos.length}<br/>
+                  Position: {index + 1}/{playbackQueue.length}<br/>
+                  Priority Queue: {priorityQueue.length}<br/>
+                  Regular Queue: {regularQueue.length}<br/>
+                  Total Photos: {photos.length}<br/>
                   Valid: {validPhotos.length}<br/>
                   Failed: {failedPhotoIds.size}<br/>
-                  ID: {photo.id}<br/>
-                  URL: {photo.fullUrl.substring(0, 30)}...
+                  ID: {photo.id}
                 </div>
               )}
             </div>
@@ -143,7 +222,7 @@ export function PhotoWall({
   return (
     <div className="h-full w-full overflow-y-auto p-4 sm:p-6 lg:p-8">
       <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-4 2xl:columns-5 3xl:columns-6 gap-4 sm:gap-6 lg:gap-8 space-y-4 sm:space-y-6 lg:space-y-8">
-        {sortedPhotos.map((photo) => (
+        {playbackQueue.map((photo) => (
           <PhotoItem
             key={photo.id}
             photo={photo}
@@ -193,7 +272,14 @@ function PhotoItem({ photo, observer, isLoaded, onFail }: PhotoItemProps) {
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           loading="lazy"
-          onError={() => {
+          onError={(e) => {
+            console.error('[PhotoWall] Failed to load thumbnail:', {
+              photoId: photo.id,
+              thumbnailUrl: photo.thumbnailUrl,
+              error: e,
+              errorType: e.type,
+              target: (e.target as HTMLImageElement)?.src
+            })
             onFail()
           }}
         />
