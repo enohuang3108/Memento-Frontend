@@ -1,13 +1,13 @@
-import { defineConfig } from 'vite'
-import type { UserConfig } from 'vite'
+import { cloudflare } from '@cloudflare/vite-plugin'
+import tailwindcss from '@tailwindcss/vite'
 import { devtools } from '@tanstack/devtools-vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
+import type { UserConfig } from 'vite'
+import { defineConfig } from 'vite'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
-import tailwindcss from '@tailwindcss/vite'
-import { cloudflare } from '@cloudflare/vite-plugin'
 
-const config = defineConfig(({ mode }: { mode: string }): UserConfig => {
+const config = defineConfig((): UserConfig => {
   return {
     server: {
       port: 3000,
@@ -21,9 +21,8 @@ const config = defineConfig(({ mode }: { mode: string }): UserConfig => {
       tailwindcss(),
       cloudflare({
         viteEnvironment: { name: 'ssr' },
-        // Configure worker name based on mode
-        configPath: mode === 'beta' ? 'wrangler.beta.jsonc' : 'wrangler.jsonc'
-      }), // must be before tanstackStart()
+        configPath: 'wrangler.toml',
+      }),
       tanstackStart(),
       viteReact(),
     ],

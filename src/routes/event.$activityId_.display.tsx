@@ -4,7 +4,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Maximize } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { DanmakuCanvas } from '../components/DanmakuCanvas'
@@ -27,6 +27,7 @@ interface DanmakuItem {
 
 function DisplayPage() {
   const { activityId } = Route.useParams()
+  const navigate = useNavigate()
   const [sessionId] = useState(() => getOrCreateSessionId(activityId))
   const [photos, setPhotos] = useState<Photo[]>([])
   const [danmakuMessages, setDanmakuMessages] = useState<DanmakuItem[]>([])
@@ -142,7 +143,7 @@ function DisplayPage() {
       {/* Back Button */}
       {!isFullscreen && (
         <button
-          onClick={() => window.history.back()}
+          onClick={() => navigate({ to: '/event/$activityId', params: { activityId } })}
           className="absolute top-4 left-4 z-20 bg-black/30 text-white hover:bg-white hover:text-black backdrop-blur-sm p-2 rounded-full transition-colors"
           title="返回"
         >
@@ -170,7 +171,12 @@ function DisplayPage() {
 
       {/* Photo Wall */}
       <div className="h-full">
-        <PhotoWall isFullscreen={isFullscreen} photos={photos} mode="slideshow" />
+        <PhotoWall
+          isFullscreen={isFullscreen}
+          photos={photos}
+          mode="slideshow"
+          showDebugInfo={import.meta.env.VITE_SITE !== 'production'}
+        />
       </div>
 
       {/* Danmaku Canvas Overlay */}
