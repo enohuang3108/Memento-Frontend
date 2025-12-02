@@ -9,7 +9,7 @@
  * - Backend uses Service Account for authentication
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8787'
 
 export interface UploadPhotoOptions {
   file: File
@@ -28,10 +28,7 @@ export interface UploadPhotoResult {
 /**
  * Compress image to max width/height
  */
-async function compressImage(
-  file: File,
-  maxSize: number = 1920
-): Promise<File> {
+async function compressImage(file: File, maxSize: number = 1920): Promise<File> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
 
@@ -85,10 +82,7 @@ async function compressImage(
           fileSize: file.size,
           fileType: file.type,
           error: e,
-          errorType:
-            typeof e === 'object' && e !== null && 'type' in e
-              ? (e as Event).type
-              : 'unknown',
+          errorType: typeof e === 'object' && e !== null && 'type' in e ? (e as Event).type : 'unknown'
         })
         reject(new Error('Failed to load image'))
       }
@@ -101,10 +95,7 @@ async function compressImage(
         fileSize: file.size,
         fileType: file.type,
         error: e,
-        errorType:
-          typeof e === 'object' && e !== null && 'type' in e
-            ? (e as Event).type
-            : 'unknown',
+        errorType: typeof e === 'object' && e !== null && 'type' in e ? (e as Event).type : 'unknown'
       })
       reject(new Error('Failed to read file'))
     }
@@ -115,9 +106,7 @@ async function compressImage(
 /**
  * Get image dimensions
  */
-async function getImageDimensions(
-  file: File
-): Promise<{ width: number; height: number }> {
+async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
 
@@ -134,10 +123,7 @@ async function getImageDimensions(
           fileSize: file.size,
           fileType: file.type,
           error: e,
-          errorType:
-            typeof e === 'object' && e !== null && 'type' in e
-              ? (e as Event).type
-              : 'unknown',
+          errorType: typeof e === 'object' && e !== null && 'type' in e ? (e as Event).type : 'unknown'
         })
         reject(new Error('Failed to load image'))
       }
@@ -150,10 +136,7 @@ async function getImageDimensions(
         fileSize: file.size,
         fileType: file.type,
         error: e,
-        errorType:
-          typeof e === 'object' && e !== null && 'type' in e
-            ? (e as Event).type
-            : 'unknown',
+        errorType: typeof e === 'object' && e !== null && 'type' in e ? (e as Event).type : 'unknown'
       })
       reject(new Error('Failed to read file'))
     }
@@ -205,7 +188,7 @@ export async function uploadPhotoToGoogleDrive(
     formData.append('width', dimensions.width.toString())
     formData.append('height', dimensions.height.toString())
 
-    const response = await fetch(`${API_URL}/upload`, {
+    const response = await fetch(`${BACKEND_URL}/upload`, {
       method: 'POST',
       body: formData,
     })
@@ -226,10 +209,7 @@ export async function uploadPhotoToGoogleDrive(
 /**
  * Validate photo file
  */
-export function validatePhotoFile(file: File): {
-  valid: boolean
-  error?: string
-} {
+export function validatePhotoFile(file: File): { valid: boolean; error?: string } {
   if (!file.type.startsWith('image/')) {
     return { valid: false, error: '只能上傳圖片檔案' }
   }

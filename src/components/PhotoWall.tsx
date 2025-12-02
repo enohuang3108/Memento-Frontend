@@ -11,15 +11,13 @@ interface PhotoWallProps {
   photos: Photo[]
   mode?: 'grid' | 'slideshow'
   slideshowInterval?: number // in milliseconds
-  showDebugInfo?: boolean // whether to show debug information
 }
 
 export function PhotoWall({
   isFullscreen,
   photos,
   mode = 'grid',
-  slideshowInterval = 5000,
-  showDebugInfo = true
+  slideshowInterval = 5000
 }: PhotoWallProps) {
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set())
@@ -202,7 +200,7 @@ export function PhotoWall({
                 }}
               />
               {/* Debug Info */}
-              {showDebugInfo && isVisible && !isFullscreen && (
+              {isVisible && !isFullscreen && (
                 <div className="absolute top-20 left-4 text-white/50 text-xs font-mono bg-black/50 p-2 rounded pointer-events-none z-50">
                   Position: {index + 1}/{playbackQueue.length}<br/>
                   Priority Queue: {priorityQueue.length}<br/>

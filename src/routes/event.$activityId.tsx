@@ -3,7 +3,6 @@
  * Participants can upload photos and send danmaku messages
  */
 
-import { EventNotFound } from '@/components/EventNotFound'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'

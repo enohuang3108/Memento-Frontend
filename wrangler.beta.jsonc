@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "memento-beta",
+  "main": "@tanstack/react-start/server-entry",
+  "compatibility_date": "2024-11-17",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Beta environment
+  "vars": {
+    "VITE_API_URL": "https://beta.memento-api.oddlab.cc",
+    "VITE_WS_URL": "wss://beta.memento-api.oddlab.cc"
+  },
+  "routes": [
+    {
+      "pattern": "beta.memento.oddlab.cc",
+      "custom_domain": true
+    }
+  ]
+}
