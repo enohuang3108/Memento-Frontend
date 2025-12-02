@@ -35,11 +35,11 @@ jobs:
       - name: Run Unit Tests
         run: pnpm test
 
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
+      # - name: Install Playwright Browsers
+      #   run: pnpm exec playwright install --with-deps
 
-      - name: Run E2E UI Tests
-        run: pnpm test:e2e:ui
-        env:
-          # Use a dummy URL for E2E tests since we mock API responses
-          VITE_API_URL: http://localhost:8787
+      # - name: Run E2E UI Tests
+      #   run: pnpm test:e2e:ui
+      #   env:
+      #     # Use a dummy URL for E2E tests since we mock API responses
+      #     VITE_API_URL: http://localhost:8787

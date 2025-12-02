@@ -3,8 +3,9 @@
  * Full-screen photo wall with real-time updates via WebSocket
  */
 
+import { EventNotFound } from '@/components/EventNotFound'
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Maximize } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { DanmakuCanvas } from '../components/DanmakuCanvas'
@@ -12,7 +13,6 @@ import { PhotoWall } from '../components/PhotoWall'
 import { getEvent, getWebSocketUrl, type Photo } from '../lib/api'
 import { getOrCreateSessionId } from '../lib/session'
 import { useWebSocket, type ServerMessage } from '../lib/websocket'
-import { EventNotFound } from '@/components/EventNotFound'
 
 export const Route = createFileRoute('/event/$activityId_/display')({
   component: DisplayPage,
@@ -27,6 +27,7 @@ interface DanmakuItem {
 
 function DisplayPage() {
   const { activityId } = Route.useParams()
+  const navigate = useNavigate()
   const [sessionId] = useState(() => getOrCreateSessionId(activityId))
   const [photos, setPhotos] = useState<Photo[]>([])
   const [danmakuMessages, setDanmakuMessages] = useState<DanmakuItem[]>([])
@@ -41,7 +42,10 @@ function DisplayPage() {
   // Load initial photos from HTTP API
   useEffect(() => {
     if (data?.photos) {
-      console.log('[Display] Loading initial photos from API:', data.photos.length)
+      console.log(
+        '[Display] Loading initial photos from API:',
+        data.photos.length
+      )
       setPhotos(data.photos)
     }
   }, [data])
@@ -53,7 +57,11 @@ function DisplayPage() {
     switch (message.type) {
       case 'joined':
         // Initialize photos from server (WebSocket may have more up-to-date data)
-        console.log('[Display] Joined - received', message.photos.length, 'photos')
+        console.log(
+          '[Display] Joined - received',
+          message.photos.length,
+          'photos'
+        )
         setPhotos(message.photos)
         break
 
@@ -122,7 +130,9 @@ function DisplayPage() {
       <div className="min-h-screen bg-secondary flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-          <p className="text-text-main text-xl font-heading font-bold">載入中...</p>
+          <p className="text-text-main text-xl font-heading font-bold">
+            載入中...
+          </p>
         </div>
       </div>
     )
@@ -135,14 +145,20 @@ function DisplayPage() {
   return (
     <div className="relative h-screen w-screen bg-secondary overflow-hidden">
       {/* Decorative Background Pattern */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none"
-           style={{ backgroundImage: 'radial-gradient(#FCD34D 2px, transparent 2px)', backgroundSize: '30px 30px' }}>
-      </div>
+      <div
+        className="absolute inset-0 opacity-10 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(#FCD34D 2px, transparent 2px)',
+          backgroundSize: '30px 30px',
+        }}
+      ></div>
 
       {/* Back Button */}
       {!isFullscreen && (
         <button
-          onClick={() => window.history.back()}
+          onClick={() =>
+            navigate({ to: '/event/$activityId', params: { activityId } })
+          }
           className="absolute top-4 left-4 z-20 bg-black/30 text-white hover:bg-white hover:text-black backdrop-blur-sm p-2 rounded-full transition-colors"
           title="返回"
         >
@@ -170,7 +186,12 @@ function DisplayPage() {
 
       {/* Photo Wall */}
       <div className="h-full">
-        <PhotoWall isFullscreen={isFullscreen} photos={photos} mode="slideshow" />
+        <PhotoWall
+          isFullscreen={isFullscreen}
+          photos={photos}
+          mode="slideshow"
+          showDebugInfo={import.meta.env.VITE_SITE !== 'production'}
+        />
       </div>
 
       {/* Danmaku Canvas Overlay */}

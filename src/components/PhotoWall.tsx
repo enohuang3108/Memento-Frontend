@@ -11,13 +11,15 @@ interface PhotoWallProps {
   photos: Photo[]
   mode?: 'grid' | 'slideshow'
   slideshowInterval?: number // in milliseconds
+  showDebugInfo?: boolean // whether to show debug information
 }
 
 export function PhotoWall({
   isFullscreen,
   photos,
   mode = 'grid',
-  slideshowInterval = 5000
+  slideshowInterval = 5000,
+  showDebugInfo = true,
 }: PhotoWallProps) {
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set())
@@ -31,7 +33,7 @@ export function PhotoWall({
   const previousPhotoCount = useRef(0)
 
   // Filter out failed photos
-  const validPhotos = photos.filter(p => !failedPhotoIds.has(p.id))
+  const validPhotos = photos.filter((p) => !failedPhotoIds.has(p.id))
 
   // Fisher-Yates shuffle algorithm for fair randomization
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -57,10 +59,10 @@ export function PhotoWall({
     }
     // New photos detected: add to priority queue
     else if (currentPhotoCount > previousPhotoCount.current) {
-      const newPhotos = validPhotos.filter(p => !playedPhotoIds.has(p.id))
+      const newPhotos = validPhotos.filter((p) => !playedPhotoIds.has(p.id))
       if (newPhotos.length > 0) {
         console.log('[PhotoWall] New photos detected:', newPhotos.length)
-        setPriorityQueue(prev => [...newPhotos, ...prev])
+        setPriorityQueue((prev) => [...newPhotos, ...prev])
       }
     }
 
@@ -68,9 +70,10 @@ export function PhotoWall({
   }, [validPhotos, mode])
 
   // Combined queue for slideshow (priority first, then regular)
-  const playbackQueue = mode === 'slideshow'
-    ? [...priorityQueue, ...regularQueue]
-    : validPhotos.sort((a, b) => b.uploadedAt - a.uploadedAt) // Grid mode: newest first
+  const playbackQueue =
+    mode === 'slideshow'
+      ? [...priorityQueue, ...regularQueue]
+      : validPhotos.sort((a, b) => b.uploadedAt - a.uploadedAt) // Grid mode: newest first
 
   // Slideshow timer with queue management
   useEffect(() => {
@@ -82,14 +85,16 @@ export function PhotoWall({
 
         // Mark current photo as played and move to regular queue
         if (currentPhoto) {
-          setPlayedPhotoIds(prev => new Set([...prev, currentPhoto.id]))
+          setPlayedPhotoIds((prev) => new Set([...prev, currentPhoto.id]))
 
           // If this photo was in priority queue, remove it
-          if (priorityQueue.some(p => p.id === currentPhoto.id)) {
-            setPriorityQueue(prev => prev.filter(p => p.id !== currentPhoto.id))
+          if (priorityQueue.some((p) => p.id === currentPhoto.id)) {
+            setPriorityQueue((prev) =>
+              prev.filter((p) => p.id !== currentPhoto.id)
+            )
             // Add to regular queue if not already there
-            if (!regularQueue.some(p => p.id === currentPhoto.id)) {
-              setRegularQueue(prev => [...prev, currentPhoto])
+            if (!regularQueue.some((p) => p.id === currentPhoto.id)) {
+              setRegularQueue((prev) => [...prev, currentPhoto])
             }
           }
         }
@@ -100,7 +105,9 @@ export function PhotoWall({
         if (nextIndex >= playbackQueue.length) {
           // If priority queue is empty, reshuffle regular queue for fair rotation
           if (priorityQueue.length === 0 && regularQueue.length > 0) {
-            console.log('[PhotoWall] Reshuffling regular queue for fair rotation')
+            console.log(
+              '[PhotoWall] Reshuffling regular queue for fair rotation'
+            )
             setRegularQueue(shuffleArray(regularQueue))
           }
           return 0 // Start from beginning
@@ -111,7 +118,13 @@ export function PhotoWall({
     }, slideshowInterval)
 
     return () => clearInterval(timer)
-  }, [mode, playbackQueue.length, slideshowInterval, priorityQueue.length, regularQueue.length])
+  }, [
+    mode,
+    playbackQueue.length,
+    slideshowInterval,
+    priorityQueue.length,
+    regularQueue.length,
+  ])
 
   // Reset index if queue changes significantly
   useEffect(() => {
@@ -187,27 +200,33 @@ export function PhotoWall({
                 src={photo.fullUrl}
                 alt={`Photo ${index + 1}`}
                 className="max-w-full max-h-full object-contain"
-                loading={Math.abs(index - currentIndex) <= 1 ? "eager" : "lazy"}
+                loading={Math.abs(index - currentIndex) <= 1 ? 'eager' : 'lazy'}
                 onError={(e) => {
                   console.error('[PhotoWall] Failed to load image:', {
                     photoId: photo.id,
                     url: photo.fullUrl,
                     error: e,
                     errorType: e.type,
-                    target: (e.target as HTMLImageElement)?.src
+                    target: (e.target as HTMLImageElement)?.src,
                   })
-                  setFailedPhotoIds(prev => new Set([...prev, photo.id]))
+                  setFailedPhotoIds((prev) => new Set([...prev, photo.id]))
                 }}
               />
               {/* Debug Info */}
-              {isVisible && !isFullscreen && (
+              {showDebugInfo && isVisible && !isFullscreen && (
                 <div className="absolute top-20 left-4 text-white/50 text-xs font-mono bg-black/50 p-2 rounded pointer-events-none z-50">
-                  Position: {index + 1}/{playbackQueue.length}<br/>
-                  Priority Queue: {priorityQueue.length}<br/>
-                  Regular Queue: {regularQueue.length}<br/>
-                  Total Photos: {photos.length}<br/>
-                  Valid: {validPhotos.length}<br/>
-                  Failed: {failedPhotoIds.size}<br/>
+                  Position: {index + 1}/{playbackQueue.length}
+                  <br />
+                  Priority Queue: {priorityQueue.length}
+                  <br />
+                  Regular Queue: {regularQueue.length}
+                  <br />
+                  Total Photos: {photos.length}
+                  <br />
+                  Valid: {validPhotos.length}
+                  <br />
+                  Failed: {failedPhotoIds.size}
+                  <br />
                   ID: {photo.id}
                 </div>
               )}
@@ -228,7 +247,9 @@ export function PhotoWall({
             photo={photo}
             observer={observerRef.current}
             isLoaded={loadedImages.has(photo.id)}
-            onFail={() => setFailedPhotoIds(prev => new Set([...prev, photo.id]))}
+            onFail={() =>
+              setFailedPhotoIds((prev) => new Set([...prev, photo.id]))
+            }
           />
         ))}
       </div>
@@ -278,7 +299,7 @@ function PhotoItem({ photo, observer, isLoaded, onFail }: PhotoItemProps) {
               thumbnailUrl: photo.thumbnailUrl,
               error: e,
               errorType: e.type,
-              target: (e.target as HTMLImageElement)?.src
+              target: (e.target as HTMLImageElement)?.src,
             })
             onFail()
           }}
