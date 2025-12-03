@@ -117,7 +117,7 @@ export function DanmakuCanvas({ messages }: DanmakuCanvasProps) {
         }
 
         // Draw danmaku
-        ctx.font = `600 ${danmaku.fontSize}px "LINE Seed TW", "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif`
+        ctx.font = `300 ${danmaku.fontSize}px "LINE Seed TW", "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif`
         ctx.fillStyle = '#000000'
         ctx.strokeStyle = danmaku.color
         // ctx.lineWidth = 3
