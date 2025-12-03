@@ -3,80 +3,88 @@ import { useState, type FormEvent } from 'react'
 interface DanmakuInputProps {
   onSend: (content: string) => void
   disabled?: boolean
-  cooldown?: number // Cooldown in milliseconds
 }
+
+const QUICK_EMOJIS = ['❤️', '🎉', '㊗️', '🎊', '🎈']
+const EMOJI_COOLDOWN_MS = 1000 // 1秒冷卻時間
 
 export function DanmakuInput({
   onSend,
   disabled = false,
-  cooldown = 2000,
 }: DanmakuInputProps) {
   const [content, setContent] = useState('')
-  const [lastSentTime, setLastSentTime] = useState(0)
-  const [error, setError] = useState<string | null>(null)
-
-  const remainingCooldown = Math.max(0, cooldown - (Date.now() - lastSentTime))
-  const isCoolingDown = remainingCooldown > 0
+  const [emojiCooldowns, setEmojiCooldowns] = useState<Record<string, boolean>>({})
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
+    sendContent(content)
+  }
 
-    const trimmed = content.trim()
+  const sendContent = (text: string) => {
+    const trimmed = text.trim()
     if (!trimmed) return
-
-    if (trimmed.length > 50) {
-      setError('彈幕長度不可超過 50 字元')
-      return
-    }
-
-    if (isCoolingDown) {
-      return
-    }
 
     onSend(trimmed)
     setContent('')
-    setLastSentTime(Date.now())
-    setError(null)
+  }
+
+  const handleEmojiClick = (emoji: string) => {
+    // 如果該 emoji 正在冷卻中，不執行任何操作
+    if (emojiCooldowns[emoji]) return
+
+    // 發送 emoji
+    sendContent(emoji)
+
+    // 設置該 emoji 為冷卻狀態
+    setEmojiCooldowns(prev => ({ ...prev, [emoji]: true }))
+
+    // 1秒後恢復
+    setTimeout(() => {
+      setEmojiCooldowns(prev => ({ ...prev, [emoji]: false }))
+    }, EMOJI_COOLDOWN_MS)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="relative">
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={content}
-          onChange={(e) => {
-            setContent(e.target.value)
-            if (error) setError(null)
-          }}
-          placeholder="發送彈幕..."
-          disabled={disabled}
-          maxLength={50}
-          className="flex-1 px-4 py-2 rounded-full border-2 border-primary/20 focus:border-primary focus:outline-none transition-colors bg-white/80 backdrop-blur-sm text-text-main placeholder:text-text-muted"
-        />
-        <button
-          type="submit"
-          disabled={disabled || !content.trim() || isCoolingDown}
-          className={`px-6 py-2 rounded-full font-bold transition-all
-            ${
-              disabled || !content.trim() || isCoolingDown
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-primary text-text-main hover:bg-primary-hover hover:-translate-y-0.5'
-            }`}
-        >
-          {isCoolingDown ? `${Math.ceil(remainingCooldown / 1000)}s` : '發送'}
-        </button>
+    <div className="flex flex-col gap-6 w-full max-w-md mx-auto p-4">
+      {/* Quick Emojis */}
+      <div className="flex gap-4 justify-center">
+        {QUICK_EMOJIS.map((emoji) => (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => handleEmojiClick(emoji)}
+            disabled={disabled || emojiCooldowns[emoji]}
+            className="text-3xl transition-opacity hover:opacity-70 active:opacity-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {emoji}
+          </button>
+        ))}
       </div>
 
-      {/* Character count and error message */}
-      <div className="absolute -bottom-6 left-4 right-4 flex justify-between text-xs">
-        <span className="text-red-500 font-bold">{error}</span>
-        <span
-          className={`${content.length > 40 ? 'text-orange-500' : 'text-text-muted'}`}
-        >
-          {content.length}/50
-        </span>
-      </div>
-    </form>
+      <form onSubmit={handleSubmit} className="relative">
+        <div className="relative bg-white rounded-2xl shadow-sm border border-gray-100 focus-within:border-gray-300 focus-within:shadow-md transition-all">
+          <input
+            type="text"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="發送彈幕..."
+            disabled={disabled}
+            className="w-full bg-transparent border-none focus:outline-none text-gray-800 placeholder:text-gray-400 text-lg px-4 py-3 pr-16"
+          />
+          <button
+            type="submit"
+            disabled={disabled || !content.trim()}
+            className={`absolute right-3 top-1/2 -translate-y-1/2 flex-shrink-0 font-medium transition-colors whitespace-nowrap px-2 py-1
+              ${
+                disabled || !content.trim()
+                  ? 'text-gray-300 cursor-not-allowed'
+                  : 'text-gray-900 hover:text-gray-600'
+              }`}
+          >
+            發送
+          </button>
+        </div>
+      </form>
+    </div>
   )
 }
