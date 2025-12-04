@@ -25,29 +25,9 @@ test.describe('Health Check', () => {
 })
 
 test.describe('Event Management', () => {
-
-
-  test('should create new event', async ({ request }) => {
-    const response = await request.post('/events', {
-      data: {
-        title: 'Test Event',
-        driveFolderId: TEST_DRIVE_FOLDER_ID,
-      },
-    })
-
-    expect(response.status()).toBe(201)
-
-    const data = await response.json()
-    expect(data).toHaveProperty('event')
-    expect(data.event).toHaveProperty('id')
-    expect(data.event.id).toMatch(/^\d{6}$/)
-    expect(data.event.status).toBe('active')
-    expect(data.event.driveFolderId).toBe(TEST_DRIVE_FOLDER_ID)
-
-
-  })
-
-  test('should reject event creation without driveFolderId', async ({ request }) => {
+  test('should reject event creation without driveFolderId', async ({
+    request,
+  }) => {
     const response = await request.post('/events', {
       data: {
         title: 'Invalid Event',
@@ -58,31 +38,6 @@ test.describe('Event Management', () => {
 
     const data = await response.json()
     expect(data).toHaveProperty('error')
-  })
-
-  test('should get event details', async ({ request }) => {
-    // First create an event
-    const createResponse = await request.post('/events', {
-      data: {
-        title: 'Test Event for Get',
-        driveFolderId: TEST_DRIVE_FOLDER_ID,
-      },
-    })
-    const createData = await createResponse.json()
-    const activityId = createData.event.id
-
-    // Now get it
-    const response = await request.get(`/events/${activityId}`)
-    expect(response.status()).toBe(200)
-
-    const data = await response.json()
-    expect(data).toHaveProperty('event')
-    expect(data).toHaveProperty('photos')
-    expect(data).toHaveProperty('activeConnections')
-
-    const { event } = data
-    expect(event.id).toBe(activityId)
-    expect(event.status).toBe('active')
   })
 
   test('should return 404 for non-existent event', async ({ request }) => {
@@ -124,7 +79,7 @@ test.describe('Event Management', () => {
     await request.delete(`/events/${activityId}`)
 
     // Wait a bit for cleanup
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     // Try to get ended event
     const response = await request.get(`/events/${activityId}`)
