@@ -6,8 +6,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type ServerMessage =
-  | { type: 'joined'; activityId: string; photos: Photo[]; timestamp: number }
+  | { type: 'joined'; activityId: string; photos: Photo[]; timestamp: number; playlist?: Photo[]; currentIndex?: number }
   | { type: 'photo_added'; photo: Photo }
+  | { type: 'play_photo'; photo: Photo; index: number; total: number; timestamp: number }
   | { type: 'danmaku'; id: string; content: string; sessionId: string; timestamp: number }
   | { type: 'activity_ended'; activityId: string; reason: string; timestamp: number }
   | { type: 'pong'; timestamp: number }
@@ -33,6 +34,7 @@ export interface Photo {
 export interface UseWebSocketOptions {
   url: string
   sessionId: string
+  role?: 'participant' | 'display'
   onMessage?: (message: ServerMessage) => void
   onOpen?: () => void
   onClose?: () => void
@@ -46,6 +48,7 @@ export function useWebSocket(options: UseWebSocketOptions) {
   const {
     url,
     sessionId,
+    role = 'participant',
     onMessage,
     onOpen,
     onClose,
@@ -84,8 +87,8 @@ export function useWebSocket(options: UseWebSocketOptions) {
       setIsConnecting(false)
       reconnectAttemptsRef.current = 0
 
-      // Send initial join message with session ID
-      ws.send(JSON.stringify({ sessionId }))
+      // Send initial join message with session ID and role
+      ws.send(JSON.stringify({ type: 'join', sessionId, role }))
 
       savedCallbacks.current.onOpen?.()
     }
@@ -120,7 +123,7 @@ export function useWebSocket(options: UseWebSocketOptions) {
       console.error('WebSocket error:', error)
       savedCallbacks.current.onError?.(error)
     }
-  }, [url, sessionId, autoReconnect, maxReconnectAttempts])
+  }, [url, sessionId, role, autoReconnect, maxReconnectAttempts])
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

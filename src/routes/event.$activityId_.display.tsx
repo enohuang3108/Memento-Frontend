@@ -33,6 +33,10 @@ function DisplayPage() {
   const [danmakuMessages, setDanmakuMessages] = useState<DanmakuItem[]>([])
   const [isFullscreen, setIsFullscreen] = useState(false)
 
+  // Backend-controlled slideshow state
+  const [currentPhoto, setCurrentPhoto] = useState<Photo | null>(null)
+  const [playlistInfo, setPlaylistInfo] = useState<{ index: number; total: number } | null>(null)
+
   // Fetch initial event data
   const { data, isLoading } = useQuery({
     queryKey: ['event', activityId],
@@ -63,12 +67,40 @@ function DisplayPage() {
           'photos'
         )
         setPhotos(message.photos)
+
+        // For Display client: initialize playlist state if available
+        if (message.playlist && message.currentIndex !== undefined) {
+          console.log(
+            '[Display] Playlist info received:',
+            message.playlist.length,
+            'photos, current index:',
+            message.currentIndex
+          )
+          setPlaylistInfo({
+            index: message.currentIndex,
+            total: message.playlist.length,
+          })
+          // Set initial photo from playlist
+          if (message.playlist[message.currentIndex]) {
+            setCurrentPhoto(message.playlist[message.currentIndex])
+          }
+        }
         break
 
       case 'photo_added':
-        // Add new photo to the wall
+        // Add new photo to the wall (for grid mode / participant view)
         console.log('[Display] Photo added:', message.photo)
         setPhotos((prev) => [...prev, message.photo])
+        break
+
+      case 'play_photo':
+        // Backend-controlled playback: update current photo
+        console.log('[Display] Play photo:', message.photo.id, 'at', message.index + 1, '/', message.total)
+        setCurrentPhoto(message.photo)
+        setPlaylistInfo({
+          index: message.index,
+          total: message.total,
+        })
         break
 
       case 'danmaku':
@@ -99,6 +131,7 @@ function DisplayPage() {
   const { isConnected } = useWebSocket({
     url: wsUrl,
     sessionId,
+    role: 'display', // Identify as Display client for backend-controlled playback
     onMessage: handleMessage,
   })
 
@@ -190,6 +223,8 @@ function DisplayPage() {
           isFullscreen={isFullscreen}
           photos={photos}
           mode="slideshow"
+          currentPhoto={currentPhoto}
+          playlistInfo={playlistInfo ?? undefined}
           showDebugInfo={import.meta.env.VITE_SITE !== 'production'}
         />
       </div>
@@ -205,7 +240,7 @@ function DisplayPage() {
       )}
 
       {/* Empty State */}
-      {photos.length === 0 && isConnected && (
+      {!currentPhoto && photos.length === 0 && isConnected && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center text-text-muted/60">
             <div className="text-8xl mb-6 animate-bounce-slight">📸</div>
