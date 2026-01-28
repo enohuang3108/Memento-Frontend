@@ -9,6 +9,9 @@ import {
   Camera,
   Check,
   Copy,
+  Eye,
+  EyeOff,
+  Lock,
   Monitor,
   QrCode,
   Users,
@@ -24,6 +27,7 @@ interface InfoDrawerProps {
     participantCount: number
     photoCount: number
     status: 'active' | 'ended'
+    displayPassword?: string
   }
   isConnected: boolean
   qrCodeUrl: string
@@ -42,6 +46,7 @@ export function InfoDrawer({
   const [startY, setStartY] = useState(0)
   const [currentY, setCurrentY] = useState(0)
   const [isCopied, setIsCopied] = useState(false)
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const drawerRef = useRef<HTMLDivElement>(null)
 
   // Handle touch start
@@ -237,6 +242,35 @@ export function InfoDrawer({
               </div>
             </button>
           </div>
+
+          {/* Display Password */}
+          {event.displayPassword && (
+            <div className="bg-slate-50 rounded-2xl p-4 mb-6 border border-slate-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-slate-500" />
+                  <span className="text-sm text-text-muted font-medium">
+                    大螢幕顯示密碼
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                  className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors"
+                >
+                  {isPasswordVisible ? (
+                    <EyeOff className="w-4 h-4 text-slate-500" />
+                  ) : (
+                    <Eye className="w-4 h-4 text-slate-500" />
+                  )}
+                </button>
+              </div>
+              <div className="mt-2 text-center">
+                <span className="text-2xl font-mono font-bold tracking-[0.3em] text-text-main">
+                  {isPasswordVisible ? event.displayPassword : '••••••'}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Display Mode Link */}
           <Link

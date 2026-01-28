@@ -12,6 +12,7 @@ export interface Event {
   expiresAt?: number
   status: 'active' | 'ended'
   driveFolderId?: string
+  displayPassword?: string // 6-digit password for Display access control
   photoCount: number
   participantCount: number
 }
@@ -107,4 +108,22 @@ export async function endEvent(activityId: string): Promise<{ success: boolean; 
  */
 export function getWebSocketUrl(activityId: string): string {
   return `${WS_URL}/events/${activityId}/ws`
+}
+
+/**
+ * Verify display password for Display access control
+ */
+export async function verifyDisplayPassword(
+  activityId: string,
+  password: string
+): Promise<{ valid: boolean; error?: string }> {
+  const response = await fetch(`${API_URL}/events/${activityId}/verify-display`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ password }),
+  })
+
+  return response.json()
 }

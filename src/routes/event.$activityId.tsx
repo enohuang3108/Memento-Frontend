@@ -38,12 +38,14 @@ function EventPage() {
   }, [activityId])
 
   // WebSocket for real-time updates
+  // Note: Participants no longer receive photo_added messages (backend optimization)
+  // Photo count updates via refetch on upload success and 30s polling
   const wsUrl = getWebSocketUrl(activityId)
   const { isConnected, sendMessage } = useWebSocket({
     url: wsUrl,
     sessionId,
     onMessage: (message) => {
-      if (message.type === 'photo_added' || message.type === 'activity_ended') {
+      if (message.type === 'activity_ended') {
         refetch()
       }
     },
@@ -62,8 +64,11 @@ function EventPage() {
         type: 'photo_added',
         ...photoData,
       })
+      // Refetch to update photoCount immediately after upload
+      // (Participants no longer receive photo_added broadcasts from backend)
+      refetch()
     },
-    [sendMessage]
+    [sendMessage, refetch]
   )
 
   const handleDanmakuSend = useCallback(
@@ -160,6 +165,7 @@ function EventPage() {
           participantCount: event.participantCount,
           photoCount: event.photoCount,
           status: event.status,
+          displayPassword: event.displayPassword,
         }}
         isConnected={isConnected}
         qrCodeUrl={qrCodeUrl}
