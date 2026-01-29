@@ -86,9 +86,6 @@ test.describe('Photo Upload UI', () => {
     // Wait for WebSocket connection
     await page.waitForTimeout(1000)
 
-    // Get initial photo count
-    const initialCount = await page.locator('[data-photo-id], img[src*="drive.google"], img[src*="googleusercontent"]').count()
-
     // Upload photo via file input
     const fileInput = page.locator('input[type="file"]').first()
     const imagePath = getTestImagePath(TEST_IMAGES.PNG)

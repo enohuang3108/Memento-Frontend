@@ -77,7 +77,7 @@ test.describe('Danmaku Feature', () => {
     }
   })
 
-  test('should reject profanity in danmaku messages', async ({ page, request }) => {
+  test('should reject profanity in danmaku messages', async ({ page }) => {
     await page.goto(`/event/${testActivityId}`)
     await page.waitForLoadState('networkidle')
 
@@ -86,7 +86,7 @@ test.describe('Danmaku Feature', () => {
 
     // Try to send a message with profanity via API
     // (UI might not show the input, so we test via API)
-    const profaneMessage = 'This is a fuck test'
+    // Note: Profane messages like "This is a fuck test" would be filtered by backend
 
     // The backend should reject or filter this
     // We can't easily test WebSocket from Playwright, so we verify the filter exists
@@ -253,8 +253,6 @@ test.describe('Danmaku Feature', () => {
       await page.waitForTimeout(500)
 
       // Input should be cleared (depending on implementation)
-      const inputValue = await danmakuInput.inputValue()
-
       // Either cleared or still has value - both are valid behaviors
       // Just verify the input is still functional
       await expect(danmakuInput).toBeVisible()
