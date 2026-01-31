@@ -3,7 +3,8 @@
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { FolderOpen, Loader2, Lock, Sparkles } from 'lucide-react'
+import { FolderOpen, Loader2, Sparkles } from 'lucide-react'
+import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Logo } from '../components/Logo'
 import { createEvent } from '../lib/api'
@@ -40,11 +41,10 @@ function HomePage() {
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
   const [driveFolderId, setDriveFolderId] = useState('')
-  const [displayPassword, setDisplayPassword] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
 
@@ -55,19 +55,12 @@ function HomePage() {
       return
     }
 
-    // Validate display password (4 digits)
-    if (!/^\d{4}$/.test(displayPassword)) {
-      setError('請輸入 4 位數字密碼')
-      return
-    }
-
     setIsCreating(true)
 
     try {
       const response = await createEvent({
         title: title.trim() || undefined,
         driveFolderId: extractedId,
-        displayPassword,
       })
 
       // Navigate to the event page with QR code
@@ -185,33 +178,6 @@ function HomePage() {
                     </ol>
                   </div>
                 </details>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="displayPassword"
-                  className="flex items-center gap-2 text-sm font-bold text-text-main mb-2 font-heading"
-                >
-                  <Lock className="w-4 h-4 text-primary" />
-                  大螢幕顯示密碼 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  id="displayPassword"
-                  value={displayPassword}
-                  onChange={(e) =>
-                    setDisplayPassword(e.target.value.replace(/\D/g, '').slice(0, 4))
-                  }
-                  required
-                  maxLength={4}
-                  placeholder="輸入 4 位數字密碼"
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all bg-white text-text-main placeholder-slate-400 font-mono text-lg tracking-[0.5em] text-center hover:border-slate-300"
-                />
-                <p className="mt-2 text-xs text-text-muted">
-                  用於保護大螢幕顯示模式的存取權限
-                </p>
               </div>
 
               {error && (

@@ -12,7 +12,6 @@ export interface Event {
   expiresAt?: number
   status: 'active' | 'ended'
   driveFolderId?: string
-  displayPassword?: string // 4-digit password for Display access control (set by user)
   photoCount: number
   participantCount: number
 }
@@ -20,7 +19,6 @@ export interface Event {
 export interface CreateEventRequest {
   title?: string
   driveFolderId: string // Required: Google Drive folder ID for photo storage
-  displayPassword: string // Required: 4-digit password for Display access control
 }
 
 export interface CreateEventResponse {
@@ -109,22 +107,4 @@ export async function endEvent(activityId: string): Promise<{ success: boolean; 
  */
 export function getWebSocketUrl(activityId: string): string {
   return `${WS_URL}/events/${activityId}/ws`
-}
-
-/**
- * Verify display password for Display access control
- */
-export async function verifyDisplayPassword(
-  activityId: string,
-  password: string
-): Promise<{ valid: boolean; error?: string }> {
-  const response = await fetch(`${API_URL}/events/${activityId}/verify-display`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ password }),
-  })
-
-  return response.json()
 }

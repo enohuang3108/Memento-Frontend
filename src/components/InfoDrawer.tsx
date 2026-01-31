@@ -4,18 +4,18 @@
  * Supports touch gestures and click interactions
  */
 
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import {
   Camera,
   Check,
   Copy,
-  Monitor,
   QrCode,
   Users,
   Wifi,
   WifiOff,
 } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
+import type { TouchEvent } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface InfoDrawerProps {
   activityId: string
@@ -43,9 +43,32 @@ export function InfoDrawer({
   const [currentY, setCurrentY] = useState(0)
   const [isCopied, setIsCopied] = useState(false)
   const drawerRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+
+  // QR code 五連點隱藏入口
+  const [clickCount, setClickCount] = useState(0)
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleQRCodeClick = useCallback(() => {
+    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current)
+    const newCount = clickCount + 1
+    setClickCount(newCount)
+    if (newCount >= 5) {
+      setClickCount(0)
+      navigate({ to: '/event/$activityId/display', params: { activityId } })
+    } else {
+      clickTimeoutRef.current = setTimeout(() => setClickCount(0), 2000)
+    }
+  }, [clickCount, activityId, navigate])
+
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current)
+    }
+  }, [])
 
   // Handle touch start
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: TouchEvent) => {
     setIsDragging(true)
     setStartY(e.touches[0].clientY)
     setCurrentY(e.touches[0].clientY)
@@ -53,7 +76,7 @@ export function InfoDrawer({
 
   // Handle touch move
   const handleTouchMove = useCallback(
-    (e: React.TouchEvent) => {
+    (e: TouchEvent) => {
       if (!isDragging) return
       setCurrentY(e.touches[0].clientY)
     },
@@ -103,7 +126,7 @@ export function InfoDrawer({
       await navigator.clipboard.writeText(url)
       setIsCopied(true)
       setTimeout(() => setIsCopied(false), 2000)
-    } catch (err) {
+    } catch {
       // Fallback for older browsers
       const textArea = document.createElement('textarea')
       textArea.value = url
@@ -207,7 +230,10 @@ export function InfoDrawer({
                 分享此 QR Code 讓更多人加入
               </p>
             </div>
-            <div className="inline-block p-5 bg-white rounded-2xl border-2 border-primary/10">
+            <div
+              className="inline-block p-5 bg-white rounded-2xl border-2 border-primary/10 cursor-pointer select-none"
+              onClick={handleQRCodeClick}
+            >
               <img
                 src={qrCodeUrl}
                 alt="Event QR Code"
@@ -237,19 +263,6 @@ export function InfoDrawer({
               </div>
             </button>
           </div>
-
-          {/* Display Mode Link */}
-          <Link
-            to="/event/$activityId/display"
-            params={{ activityId }}
-            className="block w-full group relative overflow-hidden bg-linear-to-r from-primary to-primary-hover text-white text-center font-heading font-bold text-lg py-4 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
-          >
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              <Monitor className="w-5 h-5" />
-              <span>開啟大螢幕顯示模式</span>
-            </span>
-            <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
-          </Link>
         </div>
       </div>
     </>

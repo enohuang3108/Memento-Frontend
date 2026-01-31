@@ -6,11 +6,11 @@
 import { EventNotFound } from '@/components/EventNotFound'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Lock, Loader2, Maximize } from 'lucide-react'
+import { ArrowLeft, Maximize } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DanmakuCanvas } from '../components/DanmakuCanvas'
 import { PhotoWall } from '../components/PhotoWall'
-import { getEvent, getWebSocketUrl, verifyDisplayPassword, type Photo } from '../lib/api'
+import { getEvent, getWebSocketUrl, type Photo } from '../lib/api'
 import { getOrCreateSessionId } from '../lib/session'
 import { useWebSocket, type ServerMessage } from '../lib/websocket'
 
@@ -25,27 +25,12 @@ interface DanmakuItem {
   timestamp: number
 }
 
-// Session storage key for display password authorization
-const getDisplayAuthKey = (activityId: string) => `display_auth_${activityId}`
-
 function DisplayPage() {
   const { activityId } = Route.useParams()
   const navigate = useNavigate()
   const [sessionId] = useState(() => getOrCreateSessionId(activityId))
   const [danmakuMessages, setDanmakuMessages] = useState<DanmakuItem[]>([])
   const [isFullscreen, setIsFullscreen] = useState(false)
-
-  // Display password authentication state
-  const [isAuthorized, setIsAuthorized] = useState<boolean>(() => {
-    // Check if already authorized in this session
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem(getDisplayAuthKey(activityId)) === 'true'
-    }
-    return false
-  })
-  const [password, setPassword] = useState('')
-  const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [isVerifying, setIsVerifying] = useState(false)
 
   // ===== Slideshow 狀態（優先佇列設計）=====
   // 所有照片（輪播用，依 uploadedAt 排序）
@@ -67,39 +52,11 @@ function DisplayPage() {
     allPhotosRef.current = allPhotos
   }, [allPhotos])
 
-  // Fetch initial event data (for password check, not photos)
+  // Fetch initial event data
   const { data, isLoading } = useQuery({
     queryKey: ['event', activityId],
     queryFn: () => getEvent(activityId),
   })
-
-  // Handle password verification
-  const handlePasswordSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!password.trim()) {
-      setPasswordError('請輸入密碼')
-      return
-    }
-
-    setIsVerifying(true)
-    setPasswordError(null)
-
-    try {
-      const result = await verifyDisplayPassword(activityId, password.trim())
-      if (result.valid) {
-        setIsAuthorized(true)
-        // Remember authorization for this session
-        sessionStorage.setItem(getDisplayAuthKey(activityId), 'true')
-      } else {
-        setPasswordError('密碼錯誤，請重新輸入')
-        setPassword('')
-      }
-    } catch {
-      setPasswordError('驗證失敗，請稍後再試')
-    } finally {
-      setIsVerifying(false)
-    }
-  }, [activityId, password])
 
   // 當前照片計算
   const currentPhoto: Photo | null = useMemo(() => {
@@ -129,10 +86,10 @@ function DisplayPage() {
     const timer = setInterval(() => {
       if (priorityQueueRef.current.length > 0) {
         // 模式 A：播放佇列 → 移除剛播完的照片
-        setPriorityQueue(prev => prev.slice(1))
+        setPriorityQueue((prev) => prev.slice(1))
       } else if (allPhotosRef.current.length > 0) {
         // 模式 B：正常輪播 → 下一張
-        setRotationIndex(prev => (prev + 1) % allPhotosRef.current.length)
+        setRotationIndex((prev) => (prev + 1) % allPhotosRef.current.length)
       }
     }, 5000)
 
@@ -145,7 +102,11 @@ function DisplayPage() {
 
     switch (message.type) {
       case 'joined':
-        console.log('[Display] Joined - received', message.photos.length, 'photos')
+        console.log(
+          '[Display] Joined - received',
+          message.photos.length,
+          'photos'
+        )
         setAllPhotos(message.photos)
         setRotationIndex(0)
         setPriorityQueue([]) // 初次連線，沒有「新」照片
@@ -153,8 +114,8 @@ function DisplayPage() {
 
       case 'photo_added':
         console.log('[Display] New photo added, added to priority queue')
-        setAllPhotos(prev => [...prev, message.photo])
-        setPriorityQueue(prev => [...prev, message.photo]) // 加入佇列尾端
+        setAllPhotos((prev) => [...prev, message.photo])
+        setPriorityQueue((prev) => [...prev, message.photo]) // 加入佇列尾端
         break
 
       case 'danmaku':
@@ -227,81 +188,6 @@ function DisplayPage() {
 
   if (!data) {
     return <EventNotFound />
-  }
-
-  // Show password prompt if not authorized
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-primary/10">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-                <Lock className="w-8 h-8 text-primary" />
-              </div>
-              <h1 className="text-2xl font-heading font-bold text-text-main mb-2">
-                顯示模式驗證
-              </h1>
-              <p className="text-text-muted">
-                請輸入活動密碼以開啟大螢幕顯示
-              </p>
-            </div>
-
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={4}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value.replace(/\D/g, '').slice(0, 4))
-                    setPasswordError(null)
-                  }}
-                  placeholder="請輸入 4 位數密碼"
-                  className="w-full px-4 py-4 text-center text-2xl font-mono tracking-[0.5em] border-2 border-slate-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  autoFocus
-                  disabled={isVerifying}
-                />
-              </div>
-
-              {passwordError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="text-sm text-red-600 text-center font-medium">
-                    {passwordError}
-                  </p>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isVerifying || password.length !== 4}
-                className="w-full bg-primary hover:bg-primary-hover disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-heading font-bold text-lg py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
-              >
-                {isVerifying ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    驗證中...
-                  </>
-                ) : (
-                  '進入顯示模式'
-                )}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => navigate({ to: '/event/$activityId', params: { activityId } })}
-                className="text-text-muted hover:text-primary text-sm font-medium transition-colors"
-              >
-                返回活動頁面
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
