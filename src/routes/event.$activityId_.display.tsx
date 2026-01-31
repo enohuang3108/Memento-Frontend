@@ -7,7 +7,7 @@ import { EventNotFound } from '@/components/EventNotFound'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Lock, Loader2, Maximize } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DanmakuCanvas } from '../components/DanmakuCanvas'
 import { PhotoWall } from '../components/PhotoWall'
 import { getEvent, getWebSocketUrl, verifyDisplayPassword, type Photo } from '../lib/api'
@@ -32,7 +32,6 @@ function DisplayPage() {
   const { activityId } = Route.useParams()
   const navigate = useNavigate()
   const [sessionId] = useState(() => getOrCreateSessionId(activityId))
-  const [photos, setPhotos] = useState<Photo[]>([])
   const [danmakuMessages, setDanmakuMessages] = useState<DanmakuItem[]>([])
   const [isFullscreen, setIsFullscreen] = useState(false)
 
@@ -48,11 +47,27 @@ function DisplayPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
 
-  // Backend-controlled slideshow state
-  const [currentPhoto, setCurrentPhoto] = useState<Photo | null>(null)
-  const [playlistInfo, setPlaylistInfo] = useState<{ index: number; total: number } | null>(null)
+  // ===== Slideshow 狀態（優先佇列設計）=====
+  // 所有照片（輪播用，依 uploadedAt 排序）
+  const [allPhotos, setAllPhotos] = useState<Photo[]>([])
+  // 優先佇列（FIFO，新照片加入尾端，從頭部播放）
+  const [priorityQueue, setPriorityQueue] = useState<Photo[]>([])
+  // 輪播索引（只在佇列為空時使用）
+  const [rotationIndex, setRotationIndex] = useState(0)
 
-  // Fetch initial event data
+  // 使用 ref 追蹤狀態，避免計時器 closure 問題
+  const priorityQueueRef = useRef<Photo[]>([])
+  const allPhotosRef = useRef<Photo[]>([])
+
+  useEffect(() => {
+    priorityQueueRef.current = priorityQueue
+  }, [priorityQueue])
+
+  useEffect(() => {
+    allPhotosRef.current = allPhotos
+  }, [allPhotos])
+
+  // Fetch initial event data (for password check, not photos)
   const { data, isLoading } = useQuery({
     queryKey: ['event', activityId],
     queryFn: () => getEvent(activityId),
@@ -86,16 +101,43 @@ function DisplayPage() {
     }
   }, [activityId, password])
 
-  // Load initial photos from HTTP API
-  useEffect(() => {
-    if (data?.photos) {
-      console.log(
-        '[Display] Loading initial photos from API:',
-        data.photos.length
-      )
-      setPhotos(data.photos)
+  // 當前照片計算
+  const currentPhoto: Photo | null = useMemo(() => {
+    if (priorityQueue.length > 0) return priorityQueue[0]
+    if (allPhotos.length === 0) return null
+    return allPhotos[rotationIndex % allPhotos.length]
+  }, [priorityQueue, allPhotos, rotationIndex])
+
+  // 播放列表資訊
+  const playlistInfo = useMemo(() => {
+    if (allPhotos.length === 0) return null
+    const isQueueMode = priorityQueue.length > 0
+    return {
+      index: isQueueMode ? allPhotos.length : rotationIndex,
+      total: allPhotos.length,
+      queueLength: priorityQueue.length,
+      isQueueMode,
     }
-  }, [data])
+  }, [allPhotos.length, priorityQueue.length, rotationIndex])
+
+  // 計時器：只在「有照片↔沒照片」時啟動/停止
+  const hasPhotos = allPhotos.length > 0 || priorityQueue.length > 0
+
+  useEffect(() => {
+    if (!hasPhotos) return
+
+    const timer = setInterval(() => {
+      if (priorityQueueRef.current.length > 0) {
+        // 模式 A：播放佇列 → 移除剛播完的照片
+        setPriorityQueue(prev => prev.slice(1))
+      } else if (allPhotosRef.current.length > 0) {
+        // 模式 B：正常輪播 → 下一張
+        setRotationIndex(prev => (prev + 1) % allPhotosRef.current.length)
+      }
+    }, 5000)
+
+    return () => clearInterval(timer)
+  }, [hasPhotos]) // ← 只依賴「是否有照片」
 
   // WebSocket connection
   const handleMessage = useCallback((message: ServerMessage) => {
@@ -103,47 +145,16 @@ function DisplayPage() {
 
     switch (message.type) {
       case 'joined':
-        // Initialize photos from server (WebSocket may have more up-to-date data)
-        console.log(
-          '[Display] Joined - received',
-          message.photos.length,
-          'photos'
-        )
-        setPhotos(message.photos)
-
-        // For Display client: initialize playlist state if available
-        if (message.playlist && message.currentIndex !== undefined) {
-          console.log(
-            '[Display] Playlist info received:',
-            message.playlist.length,
-            'photos, current index:',
-            message.currentIndex
-          )
-          setPlaylistInfo({
-            index: message.currentIndex,
-            total: message.playlist.length,
-          })
-          // Set initial photo from playlist
-          if (message.playlist[message.currentIndex]) {
-            setCurrentPhoto(message.playlist[message.currentIndex])
-          }
-        }
+        console.log('[Display] Joined - received', message.photos.length, 'photos')
+        setAllPhotos(message.photos)
+        setRotationIndex(0)
+        setPriorityQueue([]) // 初次連線，沒有「新」照片
         break
 
       case 'photo_added':
-        // Add new photo to the wall (for grid mode / participant view)
-        console.log('[Display] Photo added:', message.photo)
-        setPhotos((prev) => [...prev, message.photo])
-        break
-
-      case 'play_photo':
-        // Backend-controlled playback: update current photo
-        console.log('[Display] Play photo:', message.photo.id, 'at', message.index + 1, '/', message.total)
-        setCurrentPhoto(message.photo)
-        setPlaylistInfo({
-          index: message.index,
-          total: message.total,
-        })
+        console.log('[Display] New photo added, added to priority queue')
+        setAllPhotos(prev => [...prev, message.photo])
+        setPriorityQueue(prev => [...prev, message.photo]) // 加入佇列尾端
         break
 
       case 'danmaku':
@@ -339,7 +350,7 @@ function DisplayPage() {
       <div className="h-full">
         <PhotoWall
           isFullscreen={isFullscreen}
-          photos={photos}
+          photos={allPhotos}
           mode="slideshow"
           currentPhoto={currentPhoto}
           playlistInfo={playlistInfo ?? undefined}
@@ -358,7 +369,7 @@ function DisplayPage() {
       )}
 
       {/* Empty State */}
-      {!currentPhoto && photos.length === 0 && isConnected && (
+      {!currentPhoto && allPhotos.length === 0 && isConnected && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center text-text-muted/60">
             <div className="text-8xl mb-6 animate-bounce-slight">📸</div>

@@ -14,10 +14,15 @@ interface PhotoWallProps {
   mode?: 'grid' | 'slideshow'
   // Grid mode: all photos to display
   photos?: Photo[]
-  // Slideshow mode: backend-controlled current photo
+  // Slideshow mode: current photo (from priority queue or rotation)
   currentPhoto?: Photo | null
-  // Slideshow mode: playlist info from backend
-  playlistInfo?: { index: number; total: number }
+  // Slideshow mode: playlist info
+  playlistInfo?: {
+    index: number
+    total: number
+    queueLength?: number
+    isQueueMode?: boolean
+  }
   showDebugInfo?: boolean
 }
 
@@ -33,41 +38,68 @@ export function PhotoWall({
   const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set())
   const observerRef = useRef<IntersectionObserver | null>(null)
 
-  // For slideshow cross-fade transition
-  const [displayedPhoto, setDisplayedPhoto] = useState<Photo | null>(null)
-  const [previousPhoto, setPreviousPhoto] = useState<Photo | null>(null)
-  const [isTransitioning, setIsTransitioning] = useState(false)
+  // For slideshow cross-fade transition (two-layer toggle approach)
+  const [layers, setLayers] = useState<[Photo | null, Photo | null]>([null, null])
+  const [activeLayer, setActiveLayer] = useState<0 | 1>(0)
 
   // Filter out failed photos for grid mode
   const validPhotos = photos.filter((p) => !failedPhotoIds.has(p.id))
 
-  // Handle slideshow photo transition
-  useEffect(() => {
-    if (mode !== 'slideshow') return
-    if (!currentPhoto) return
-    if (displayedPhoto?.id === currentPhoto.id) return
+  // Track pending photo to avoid race conditions
+  const pendingPhotoRef = useRef<string | null>(null)
 
-    // Start transition
-    setIsTransitioning(true)
-    setPreviousPhoto(displayedPhoto)
-
-    // After a short delay, switch to new photo
-    const timer = setTimeout(() => {
-      setDisplayedPhoto(currentPhoto)
-      setIsTransitioning(false)
-    }, 500) // 0.5s for fade-out
-
-    return () => clearTimeout(timer)
-  }, [currentPhoto, displayedPhoto, mode])
-
-  // Prefetch next photo (if available from playlist)
+  // Handle slideshow photo transition using two-layer toggle
   useEffect(() => {
     if (mode !== 'slideshow' || !currentPhoto) return
 
-    // Prefetch the current photo
+    // Check if already displaying this photo
+    if (layers[0]?.id === currentPhoto.id || layers[1]?.id === currentPhoto.id) {
+      return
+    }
+
+    // Check if already loading this photo
+    if (pendingPhotoRef.current === currentPhoto.id) {
+      return
+    }
+
+    const inactiveIndex = activeLayer === 0 ? 1 : 0
+    const photoToLoad = currentPhoto
+
+    // Mark as pending
+    pendingPhotoRef.current = photoToLoad.id
+
+    // Preload the image first, then update layers and switch
     const img = new Image()
-    img.src = currentPhoto.fullUrl
-  }, [currentPhoto, mode])
+    img.src = photoToLoad.fullUrl
+
+    img.onload = () => {
+      // Only proceed if this is still the pending photo
+      if (pendingPhotoRef.current !== photoToLoad.id) {
+        return
+      }
+
+      pendingPhotoRef.current = null
+
+      // Place photo in inactive layer
+      setLayers((prev) => {
+        const newLayers: [Photo | null, Photo | null] = [...prev]
+        newLayers[inactiveIndex] = photoToLoad
+        return newLayers
+      })
+
+      // Switch active layer after DOM update
+      requestAnimationFrame(() => {
+        setActiveLayer(inactiveIndex as 0 | 1)
+      })
+    }
+
+    img.onerror = () => {
+      // Clear pending on error
+      if (pendingPhotoRef.current === photoToLoad.id) {
+        pendingPhotoRef.current = null
+      }
+    }
+  }, [currentPhoto, mode, layers, activeLayer])
 
   // Setup Intersection Observer for lazy loading (Grid mode only)
   useEffect(() => {
@@ -99,7 +131,7 @@ export function PhotoWall({
   }, [mode])
 
   // Empty state
-  if (mode === 'slideshow' && !currentPhoto && !displayedPhoto) {
+  if (mode === 'slideshow' && !currentPhoto && !layers[0] && !layers[1]) {
     return null
   }
 
@@ -109,67 +141,58 @@ export function PhotoWall({
 
   // Slideshow Mode (Backend-controlled)
   if (mode === 'slideshow') {
-    const photoToShow = isTransitioning ? previousPhoto : displayedPhoto
-
     return (
       <div className="h-full w-full relative bg-black overflow-hidden">
-        {/* Previous photo (fading out) */}
-        {isTransitioning && previousPhoto && (
-          <div
-            className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out opacity-0 z-0"
-          >
-            <img
-              src={previousPhoto.fullUrl}
-              alt=""
-              className="max-w-full max-h-full object-contain"
-            />
-          </div>
-        )}
-
-        {/* Current photo */}
-        {photoToShow && (
+        {/* Layer 0 */}
+        {layers[0] && (
           <div
             className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out ${
-              isTransitioning ? 'opacity-100' : 'opacity-100'
-            } z-10`}
+              activeLayer === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'
+            }`}
           >
             <img
-              src={photoToShow.fullUrl}
+              src={layers[0].fullUrl}
               alt=""
               className="max-w-full max-h-full object-contain"
-              onError={(e) => {
-                console.error('[PhotoWall] Failed to load image:', {
-                  photoId: photoToShow.id,
-                  url: photoToShow.fullUrl,
-                  error: e,
-                })
-                setFailedPhotoIds((prev) => new Set([...prev, photoToShow.id]))
-              }}
+              onError={() =>
+                setFailedPhotoIds((prev) => new Set([...prev, layers[0]!.id]))
+              }
             />
-
-            {/* Debug Info */}
-            {showDebugInfo && !isFullscreen && playlistInfo && (
-              <div className="absolute top-20 left-4 text-white/50 text-xs font-mono bg-black/50 p-2 rounded pointer-events-none z-50">
-                Position: {playlistInfo.index + 1}/{playlistInfo.total}
-                <br />
-                Photo ID: {photoToShow.id}
-                <br />
-                Mode: Backend-controlled
-              </div>
-            )}
           </div>
         )}
 
-        {/* Incoming photo (fading in) */}
-        {isTransitioning && currentPhoto && (
+        {/* Layer 1 */}
+        {layers[1] && (
           <div
-            className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out opacity-100 z-20"
+            className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out ${
+              activeLayer === 1 ? 'opacity-100 z-10' : 'opacity-0 z-0'
+            }`}
           >
             <img
-              src={currentPhoto.fullUrl}
+              src={layers[1].fullUrl}
               alt=""
               className="max-w-full max-h-full object-contain"
+              onError={() =>
+                setFailedPhotoIds((prev) => new Set([...prev, layers[1]!.id]))
+              }
             />
+          </div>
+        )}
+
+        {/* Debug Info */}
+        {showDebugInfo && !isFullscreen && playlistInfo && layers[activeLayer] && (
+          <div className="absolute top-20 left-4 text-white/50 text-xs font-mono bg-black/50 p-2 rounded pointer-events-none z-50">
+            {playlistInfo.isQueueMode ? (
+              <>
+                Mode: Priority Queue ({playlistInfo.queueLength} remaining)
+              </>
+            ) : (
+              <>
+                Position: {playlistInfo.index + 1}/{playlistInfo.total}
+              </>
+            )}
+            <br />
+            Photo ID: {layers[activeLayer]!.id}
           </div>
         )}
       </div>
