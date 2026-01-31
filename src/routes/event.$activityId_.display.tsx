@@ -242,13 +242,13 @@ function DisplayPage() {
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  maxLength={6}
+                  maxLength={4}
                   value={password}
                   onChange={(e) => {
-                    setPassword(e.target.value.replace(/\D/g, ''))
+                    setPassword(e.target.value.replace(/\D/g, '').slice(0, 4))
                     setPasswordError(null)
                   }}
-                  placeholder="請輸入 6 位數密碼"
+                  placeholder="請輸入 4 位數密碼"
                   className="w-full px-4 py-4 text-center text-2xl font-mono tracking-[0.5em] border-2 border-slate-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   autoFocus
                   disabled={isVerifying}
@@ -265,7 +265,7 @@ function DisplayPage() {
 
               <button
                 type="submit"
-                disabled={isVerifying || password.length !== 6}
+                disabled={isVerifying || password.length !== 4}
                 className="w-full bg-primary hover:bg-primary-hover disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-heading font-bold text-lg py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 {isVerifying ? (

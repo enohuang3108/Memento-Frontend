@@ -165,7 +165,6 @@ function EventPage() {
           participantCount: event.participantCount,
           photoCount: event.photoCount,
           status: event.status,
-          displayPassword: event.displayPassword,
         }}
         isConnected={isConnected}
         qrCodeUrl={qrCodeUrl}
