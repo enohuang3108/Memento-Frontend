@@ -56,11 +56,9 @@ export function PhotoWall({
   useEffect(() => {
     if (mode !== 'slideshow' || !currentPhoto) return
 
-    // Check if already displaying this photo
-    if (
-      layers[0]?.id === currentPhoto.id ||
-      layers[1]?.id === currentPhoto.id
-    ) {
+    // Check if already displaying this photo on active layer
+    // Only skip if the ACTIVE layer shows this photo (not the inactive layer)
+    if (layers[activeLayer]?.id === currentPhoto.id) {
       return
     }
 
