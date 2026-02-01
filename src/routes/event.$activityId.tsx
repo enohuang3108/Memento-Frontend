@@ -1,6 +1,7 @@
 /**
  * Event/Activity Page - Participant View
  * Participants can upload photos and send danmaku messages
+ * Playful Geometric Design System
  */
 
 import { EventNotFound } from '@/components/EventNotFound'
@@ -9,6 +10,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { DanmakuInput } from '../components/DanmakuInput'
+import { DotPatternSubtle, GeometricBackground } from '../components/decorations'
 import { InfoDrawer } from '../components/InfoDrawer'
 import { Logo } from '../components/Logo'
 import { PhotoUpload } from '../components/PhotoUpload'
@@ -83,9 +85,10 @@ function EventPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+      <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+        <GeometricBackground variant="minimal" />
+        <div className="text-center relative z-10">
+          <Loader2 className="w-12 h-12 text-accent animate-spin mx-auto mb-4" />
           <p className="text-text-muted font-heading font-bold">載入中...</p>
         </div>
       </div>
@@ -109,20 +112,26 @@ function EventPage() {
   )}`
 
   return (
-    <div className="min-h-screen bg-secondary pb-24 pt-4">
+    <div className="min-h-screen bg-background pb-24 pt-4 relative overflow-hidden">
       {/* Logo in top-left corner */}
       <Logo />
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      {/* Decorative Background */}
+      <DotPatternSubtle opacity={0.05} />
+
+      <div className="max-w-2xl mx-auto px-4 py-6 relative z-10">
         {/* Enhanced Header */}
-        <div className="mb-8 text-center animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="mb-8 text-center animate-pop-in">
           <h1 className="text-4xl font-heading font-bold text-text-main mb-3 tracking-tight">
             {event.title || '活動照片牆'}
           </h1>
 
           {event.status !== 'active' && (
-            <div className="mt-4 p-4 bg-slate-100 border-2 border-slate-200 rounded-2xl text-center animate-in fade-in duration-300">
-              <p className="text-slate-600 font-bold text-sm">
+            <div
+              className="mt-4 p-4 bg-muted border-2 border-border rounded-2xl text-center"
+              style={{ boxShadow: '4px 4px 0px 0px #E2E8F0' }}
+            >
+              <p className="text-text-muted font-bold text-sm">
                 此活動已結束，點擊下方「活動資訊」查看詳情
               </p>
             </div>
@@ -131,14 +140,14 @@ function EventPage() {
 
         {/* Primary Actions - Messages */}
         {event.status === 'active' && (
-          <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="mb-6 animate-pop-in" style={{ animationDelay: '0.1s' }}>
             <DanmakuInput onSend={handleDanmakuSend} disabled={!isConnected} />
           </div>
         )}
 
         {/* Primary Actions - Photo Upload */}
         {event.status === 'active' && (
-          <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="mb-6 animate-pop-in" style={{ animationDelay: '0.2s' }}>
             <PhotoUpload
               activityId={activityId}
               sessionId={sessionId}
@@ -147,8 +156,8 @@ function EventPage() {
               onUploadError={(error) => setUploadError(error)}
             />
             {uploadError && (
-              <div className="mt-3 p-3 bg-red-50 border-2 border-red-200 rounded-xl animate-in fade-in duration-300">
-                <p className="text-sm text-red-600 text-center font-medium">
+              <div className="mt-3 p-3 bg-red-50 border-2 border-red-400 rounded-xl animate-wiggle">
+                <p className="text-sm text-red-600 text-center font-bold">
                   {uploadError}
                 </p>
               </div>

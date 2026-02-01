@@ -1,10 +1,12 @@
 /**
  * PhotoUpload Component
  * Handles multiple photo file selection, preview, compression, and batch upload
+ * Playful Geometric Design System
  */
 
 import { useRef, useState, type ChangeEvent } from 'react'
 import { uploadPhotoToGoogleDrive, validatePhotoFile } from '../lib/googleDrive'
+import { DotPatternSubtle } from './decorations'
 
 const MAX_PHOTOS = 50
 
@@ -229,155 +231,162 @@ export function PhotoUpload({
   ).length
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">📷 上傳照片</h2>
-        {selectedFiles.length > 0 && (
-          <span className="text-sm text-gray-600">
-            {selectedFiles.length} / {MAX_PHOTOS} 張照片
-          </span>
-        )}
-      </div>
+    <div className="card-sticker p-6 relative overflow-hidden">
+      <DotPatternSubtle className="opacity-50" />
 
-      {selectedFiles.length === 0 ? (
-        /* File Selector */
-        <div>
-          <label
-            htmlFor="photo-upload"
-            className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
-          >
-            <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-              <div className="text-6xl mb-4">📸</div>
-              <p className="mb-2 text-sm text-gray-700">
-                <span className="font-semibold">點擊選擇照片</span>
-              </p>
-              <p className="text-xs text-gray-500">JPEG, PNG, GIF, WebP (最大 20MB)</p>
-              <p className="text-xs text-gray-500 mt-1">一次最多可選擇 {MAX_PHOTOS} 張照片</p>
-            </div>
-            <input
-              ref={fileInputRef}
-              id="photo-upload"
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-          </label>
-
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600 whitespace-pre-line">{error}</p>
-            </div>
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-heading font-bold text-text-main flex items-center gap-2">
+            <span className="text-2xl">📷</span> 上傳照片
+          </h2>
+          {selectedFiles.length > 0 && (
+            <span className="text-sm font-bold text-text-muted bg-muted px-3 py-1 rounded-full border-2 border-border">
+              {selectedFiles.length} / {MAX_PHOTOS} 張
+            </span>
           )}
         </div>
-      ) : (
-        /* Preview Grid and Upload */
-        <div>
-          {/* Overall Progress */}
-          {isUploading && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700 font-medium">
-                上傳中... {uploadedCount} / {selectedFiles.length}
-              </p>
-            </div>
-          )}
 
-          {/* Preview Grid */}
-          <div className="mb-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-96 overflow-y-auto">
-            {selectedFiles.map((photoFile) => {
-              const status = getUploadStatus(photoFile.id)
-              return (
-                <div key={photoFile.id} className="relative group">
-                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200">
-                    <img
-                      src={photoFile.previewUrl}
-                      alt={photoFile.file.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  {/* Remove button (only when not uploading) */}
-                  {!isUploading && (
-                    <button
-                      onClick={() => handleRemoveFile(photoFile.id)}
-                      className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="移除"
-                    >
-                      ×
-                    </button>
-                  )}
-
-                  {/* Upload Status Overlay */}
-                  {status && status.status !== 'pending' && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-                      {status.status === 'uploading' && (
-                        <div className="text-white text-xs font-medium">
-                          {status.progress}%
-                        </div>
-                      )}
-                      {status.status === 'success' && (
-                        <div className="text-green-400 text-2xl">✓</div>
-                      )}
-                      {status.status === 'error' && (
-                        <div className="text-red-400 text-2xl" title={status.error}>
-                          ✕
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Add more photos button */}
-          {!isUploading && selectedFiles.length < MAX_PHOTOS && (
-            <div className="mb-4">
-              <label
-                htmlFor="photo-upload-more"
-                className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg cursor-pointer transition-colors"
-              >
-                <span className="mr-2">+</span>
-                <span>新增更多照片</span>
-              </label>
+        {selectedFiles.length === 0 ? (
+          /* File Selector */
+          <div>
+            <label
+              htmlFor="photo-upload"
+              className="flex flex-col items-center justify-center w-full h-64 border-3 border-dashed border-accent/50 rounded-2xl cursor-pointer hover:border-accent hover:bg-accent/5 transition-all group"
+            >
+              <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                <div className="text-6xl mb-4 group-hover:animate-bounce-slight">📸</div>
+                <p className="mb-2 text-sm text-text-main font-heading font-bold">
+                  點擊選擇照片
+                </p>
+                <p className="text-xs text-text-muted">JPEG, PNG, GIF, WebP (最大 20MB)</p>
+                <p className="text-xs text-text-muted mt-1">一次最多可選擇 {MAX_PHOTOS} 張照片</p>
+              </div>
               <input
-                id="photo-upload-more"
+                ref={fileInputRef}
+                id="photo-upload"
                 type="file"
                 accept="image/*"
                 multiple
                 className="hidden"
                 onChange={handleFileSelect}
               />
-            </div>
-          )}
+            </label>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600 whitespace-pre-line">{error}</p>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={handleUpload}
-              disabled={isUploading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
-            >
-              {isUploading ? `上傳中 (${uploadedCount}/${selectedFiles.length})` : `上傳 ${selectedFiles.length} 張照片`}
-            </button>
-            <button
-              onClick={handleCancel}
-              disabled={isUploading}
-              className="px-6 py-3 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-700 font-semibold rounded-lg transition-colors"
-            >
-              取消
-            </button>
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 border-2 border-red-400 rounded-xl">
+                <p className="text-sm text-red-600 font-bold whitespace-pre-line">{error}</p>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        ) : (
+          /* Preview Grid and Upload */
+          <div>
+            {/* Overall Progress */}
+            {isUploading && (
+              <div className="mb-4 p-3 bg-accent/10 border-2 border-accent rounded-xl">
+                <p className="text-sm text-accent font-heading font-bold">
+                  上傳中... {uploadedCount} / {selectedFiles.length}
+                </p>
+              </div>
+            )}
+
+            {/* Preview Grid */}
+            <div className="mb-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-96 overflow-y-auto">
+              {selectedFiles.map((photoFile) => {
+                const status = getUploadStatus(photoFile.id)
+                return (
+                  <div key={photoFile.id} className="relative group">
+                    <div className="aspect-square rounded-xl overflow-hidden bg-muted border-2 border-border">
+                      <img
+                        src={photoFile.previewUrl}
+                        alt={photoFile.file.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    {/* Remove button (only when not uploading) */}
+                    {!isUploading && (
+                      <button
+                        onClick={() => handleRemoveFile(photoFile.id)}
+                        className="absolute top-1 right-1 bg-secondary hover:bg-secondary/80 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity font-bold border-2 border-foreground"
+                        style={{ boxShadow: '2px 2px 0px 0px #1E293B' }}
+                        title="移除"
+                      >
+                        ×
+                      </button>
+                    )}
+
+                    {/* Upload Status Overlay */}
+                    {status && status.status !== 'pending' && (
+                      <div className="absolute inset-0 bg-foreground/60 flex items-center justify-center rounded-xl">
+                        {status.status === 'uploading' && (
+                          <div className="text-white text-xs font-bold bg-accent px-2 py-1 rounded-full">
+                            {status.progress}%
+                          </div>
+                        )}
+                        {status.status === 'success' && (
+                          <div className="text-quaternary text-3xl font-bold">✓</div>
+                        )}
+                        {status.status === 'error' && (
+                          <div className="text-secondary text-3xl font-bold" title={status.error}>
+                            ✕
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Add more photos button */}
+            {!isUploading && selectedFiles.length < MAX_PHOTOS && (
+              <div className="mb-4">
+                <label
+                  htmlFor="photo-upload-more"
+                  className="inline-flex items-center px-4 py-2 bg-muted hover:bg-border text-text-main font-heading font-bold rounded-full cursor-pointer transition-colors border-2 border-border"
+                >
+                  <span className="mr-2">+</span>
+                  <span>新增更多照片</span>
+                </label>
+                <input
+                  id="photo-upload-more"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border-2 border-red-400 rounded-xl">
+                <p className="text-sm text-red-600 font-bold whitespace-pre-line">{error}</p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleUpload}
+                disabled={isUploading}
+                className="flex-1 btn-candy"
+              >
+                {isUploading ? `上傳中 (${uploadedCount}/${selectedFiles.length})` : `上傳 ${selectedFiles.length} 張照片`}
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={isUploading}
+                className="px-6 py-3 bg-muted hover:bg-border disabled:bg-muted text-text-main font-heading font-bold rounded-full transition-colors border-2 border-border disabled:opacity-60"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

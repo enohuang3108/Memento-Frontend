@@ -1,11 +1,17 @@
 /**
  * Home Page - Create Activity
+ * Playful Geometric Design System
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { FolderOpen, Loader2, Sparkles } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
+import {
+  DotPatternYellow,
+  GeometricBackground,
+  SquiggleUnderline,
+} from '../components/decorations'
 import { Logo } from '../components/Logo'
 import { createEvent } from '../lib/api'
 
@@ -75,55 +81,56 @@ function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-secondary relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background relative overflow-hidden">
       {/* Logo in top-left corner */}
       <Logo />
 
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/10 rounded-full blur-3xl"></div>
-      </div>
+      {/* Decorative Background */}
+      <GeometricBackground variant="default" />
+      <DotPatternYellow opacity={0.08} spacing={30} />
 
       <div className="max-w-4xl w-full relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         {/* Left Column: Hero Text */}
-        <div className="text-left animate-slide-up">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-heading font-bold text-primary">
-              即時照片分享
-            </span>
+        <div className="text-left animate-pop-in">
+          {/* Pill Badge */}
+          <div className="pill-badge bg-tertiary text-foreground mb-6">
+            <Sparkles className="w-4 h-4" />
+            <span>即時照片分享</span>
           </div>
 
-          <h2 className="text-6xl lg:text-7xl font-heading font-bold text-text-main mb-6 tracking-tight leading-tight">
+          <h2 className="text-6xl lg:text-7xl font-heading font-bold text-text-main mb-2 tracking-tight leading-tight">
             Memento
           </h2>
+          <div className="w-48 mb-6">
+            <SquiggleUnderline color="#F472B6" />
+          </div>
+
           <p className="text-lg text-text-muted font-body mb-8 leading-relaxed max-w-md">
             打造您的專屬即時照片牆，讓每一刻精彩瞬間即時分享
           </p>
 
           <div className="flex flex-wrap gap-4 text-sm text-text-muted">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-primary rounded-full"></div>
-              <span>即時同步</span>
+              <div className="w-3 h-3 bg-accent rounded-full border-2 border-foreground"></div>
+              <span className="font-bold">即時同步</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-accent rounded-full"></div>
-              <span>簡單分享</span>
+              <div className="w-3 h-3 bg-secondary rounded-full border-2 border-foreground"></div>
+              <span className="font-bold">簡單分享</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-primary rounded-full"></div>
-              <span>無限照片</span>
+              <div className="w-3 h-3 bg-tertiary rounded-full border-2 border-foreground"></div>
+              <span className="font-bold">無限照片</span>
             </div>
           </div>
         </div>
 
         {/* Right Column: Interactive Card */}
         <div
-          className="relative animate-slide-up"
-          style={{ animationDelay: '0.2s' }}
+          className="relative animate-pop-in"
+          style={{ animationDelay: '0.15s' }}
         >
-          <div className="card-modern p-8 relative z-20 bg-white/95 backdrop-blur-xl border-white/20 shadow-2xl">
+          <div className="card-sticker p-8 relative z-20 bg-white">
             {/* Create Event Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
@@ -131,7 +138,7 @@ function HomePage() {
                   htmlFor="title"
                   className="flex items-center gap-2 text-sm font-bold text-text-main mb-2 font-heading"
                 >
-                  <Sparkles className="w-4 h-4 text-primary" />
+                  <Sparkles className="w-4 h-4 text-accent" />
                   活動名稱
                 </label>
                 <input
@@ -141,7 +148,7 @@ function HomePage() {
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={100}
                   placeholder="一二三木頭人"
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all bg-white text-text-main placeholder-slate-400 hover:border-slate-300"
+                  className="input-playful"
                 />
               </div>
 
@@ -150,8 +157,8 @@ function HomePage() {
                   htmlFor="driveFolderId"
                   className="flex items-center gap-2 text-sm font-bold text-text-main mb-2 font-heading"
                 >
-                  <FolderOpen className="w-4 h-4 text-primary" />
-                  Google Drive 資料夾 <span className="text-red-500">*</span>
+                  <FolderOpen className="w-4 h-4 text-accent" />
+                  Google Drive 資料夾 <span className="text-secondary">*</span>
                 </label>
                 <input
                   type="text"
@@ -160,16 +167,16 @@ function HomePage() {
                   onChange={(e) => setDriveFolderId(e.target.value)}
                   required
                   placeholder="貼上連結或資料夾 ID"
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all bg-white text-text-main placeholder-slate-400 font-mono text-sm hover:border-slate-300"
+                  className="input-playful font-mono text-sm"
                 />
                 <details className="mt-3 group">
-                  <summary className="text-xs text-primary hover:text-primary-hover cursor-pointer font-bold list-none flex items-center gap-1.5 w-fit">
+                  <summary className="text-xs text-accent hover:text-primary-hover cursor-pointer font-bold list-none flex items-center gap-1.5 w-fit">
                     <span className="group-open:rotate-90 transition-transform">
                       ▶
                     </span>{' '}
                     如何取得資料夾 ID？
                   </summary>
-                  <div className="mt-2 p-4 bg-slate-50/80 rounded-xl text-xs text-slate-600 border border-slate-200/60">
+                  <div className="mt-2 p-4 bg-muted rounded-xl text-xs text-text-muted border-2 border-border">
                     <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
                       <li>建立 Google Drive 資料夾</li>
                       <li>右鍵點擊 → 選擇「共用」</li>
@@ -181,8 +188,8 @@ function HomePage() {
               </div>
 
               {error && (
-                <div className="p-4 bg-red-50 border-2 border-red-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
-                  <p className="text-sm text-red-600 text-center font-medium">
+                <div className="p-4 bg-red-50 border-2 border-red-400 rounded-xl animate-wiggle">
+                  <p className="text-sm text-red-600 text-center font-bold">
                     {error}
                   </p>
                 </div>
@@ -191,7 +198,7 @@ function HomePage() {
               <button
                 type="submit"
                 disabled={isCreating}
-                className="w-full py-3.5 rounded-xl font-heading font-bold text-base bg-text-main text-white hover:bg-slate-800 transition-all duration-300 shadow-lg shadow-slate-300 hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98] group"
+                className="w-full btn-candy flex items-center justify-center gap-2"
               >
                 {isCreating ? (
                   <>
@@ -204,9 +211,6 @@ function HomePage() {
               </button>
             </form>
           </div>
-
-          {/* Background decorative blob behind card */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-linear-to-br from-primary/20 to-accent/20 rounded-full blur-3xl -z-10"></div>
         </div>
       </div>
     </div>

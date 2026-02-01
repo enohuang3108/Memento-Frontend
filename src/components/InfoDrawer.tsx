@@ -2,6 +2,7 @@
  * Info Drawer Component
  * A bottom sheet drawer that displays event information
  * Supports touch gestures and click interactions
+ * Playful Geometric Design System
  */
 
 import { useNavigate } from '@tanstack/react-router'
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react'
 import type { TouchEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { DotPatternSubtle } from './decorations'
 
 interface InfoDrawerProps {
   activityId: string
@@ -165,7 +167,7 @@ export function InfoDrawer({
       {/* Backdrop */}
       {drawerState === 'open' && (
         <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300"
+          className="fixed inset-0 bg-foreground/30 z-40 transition-opacity duration-300"
           onClick={() => setDrawerState('peek')}
         />
       )}
@@ -173,39 +175,45 @@ export function InfoDrawer({
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-50 transition-all duration-300 ease-out"
+        className="fixed bottom-0 left-0 right-0 bg-background rounded-t-3xl z-50 transition-all duration-300 ease-out border-t-2 border-x-2 border-foreground overflow-hidden"
         style={{
           height: getDrawerHeight(),
           transform: getTransform(),
+          boxShadow: '0px -4px 0px 0px #1E293B',
         }}
       >
+        <DotPatternSubtle className="opacity-30" />
+
         {/* Drawer Handle */}
         <div
-          className="py-3 px-4 cursor-pointer select-none hover:bg-slate-50/50 transition-colors"
+          className="py-3 px-4 cursor-pointer select-none hover:bg-muted/50 transition-colors relative z-10"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onClick={handleHeaderClick}
         >
-          <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-3" />
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-lg">
-              <Users className="w-4 h-4 text-primary" />
+          <div className="w-12 h-1.5 bg-foreground/30 rounded-full mx-auto mb-3" />
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            {/* Participants Badge */}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 rounded-full border-2 border-accent/30">
+              <Users className="w-4 h-4 text-accent" />
               <span className="text-sm font-heading font-bold text-text-main">
                 {event.participantCount}
               </span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 rounded-lg">
-              <Camera className="w-4 h-4 text-accent" />
+            {/* Photos Badge */}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-tertiary/20 rounded-full border-2 border-tertiary/30">
+              <Camera className="w-4 h-4 text-tertiary" />
               <span className="text-sm font-heading font-bold text-text-main">
                 {event.photoCount}
               </span>
             </div>
+            {/* Connection Status */}
             <div
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 ${
                 isConnected
-                  ? 'bg-green-50 text-green-700'
-                  : 'bg-slate-100 text-slate-500'
+                  ? 'bg-quaternary/20 border-quaternary/30 text-quaternary'
+                  : 'bg-muted border-border text-text-muted'
               }`}
             >
               {isConnected ? (
@@ -221,17 +229,18 @@ export function InfoDrawer({
         </div>
 
         {/* Drawer Content */}
-        <div className="overflow-y-auto px-4 pb-6 h-[calc(100%-60px)]">
-          {/* QR Code */}
-          <div className="bg-linear-to-br from-primary/5 to-accent/5 rounded-2xl p-6 mb-6 text-center border border-primary/10">
+        <div className="overflow-y-auto px-4 pb-6 h-[calc(100%-60px)] relative z-10">
+          {/* QR Code Card */}
+          <div className="card-sticker-soft p-6 mb-6 text-center relative overflow-hidden">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <QrCode className="w-5 h-5 text-primary" />
+              <QrCode className="w-5 h-5 text-accent" />
               <p className="text-sm text-text-main font-heading font-bold">
                 分享此 QR Code 讓更多人加入
               </p>
             </div>
             <div
-              className="inline-block p-5 bg-white rounded-2xl border-2 border-primary/10 cursor-pointer select-none"
+              className="inline-block p-4 bg-white rounded-2xl border-2 border-foreground cursor-pointer select-none"
+              style={{ boxShadow: '4px 4px 0px 0px #8B5CF6' }}
               onClick={handleQRCodeClick}
             >
               <img
@@ -242,20 +251,20 @@ export function InfoDrawer({
             </div>
             <button
               onClick={handleCopyUrl}
-              className="mt-4 w-full group relative overflow-hidden px-4 py-3 rounded-xl transition-all"
+              className="mt-4 w-full group relative overflow-hidden px-4 py-3 rounded-full transition-all border-2 border-border hover:border-accent hover:bg-accent/5"
             >
               <div className="flex items-center justify-center gap-2">
                 {isCopied ? (
                   <>
-                    <Check className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-heading font-bold text-green-600">
+                    <Check className="w-4 h-4 text-quaternary" />
+                    <span className="text-sm font-heading font-bold text-quaternary">
                       已複製！
                     </span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-4 h-4 text-primary group-hover:text-primary-hover transition-colors" />
-                    <span className="text-sm font-heading font-bold text-text-muted group-hover:text-primary transition-colors">
+                    <Copy className="w-4 h-4 text-accent group-hover:text-primary-hover transition-colors" />
+                    <span className="text-sm font-heading font-bold text-text-muted group-hover:text-accent transition-colors">
                       複製連結
                     </span>
                   </>

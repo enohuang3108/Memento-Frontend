@@ -1,6 +1,7 @@
 /**
  * DanmakuCanvas Component
  * Renders flying danmaku messages using Canvas API for performance
+ * Japanese sticker style with white outline (works for emoji too)
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -24,22 +25,32 @@ interface ActiveDanmaku {
   speed: number
   color: string
   fontSize: number
+  isEmoji: boolean
 }
 
 const COLORS = [
-  '#FFFFFF',
-  '#FFD700',
-  '#FF69B4',
-  '#00FFFF',
-  '#FF6347',
-  '#7FFF00',
-  '#FF1493',
-  '#00FA9A',
+  '#FF6B6B', // Coral Red
+  '#FFD93D', // Golden Yellow
+  '#6BCB77', // Fresh Green
+  '#4D96FF', // Sky Blue
+  '#FF6FB5', // Hot Pink
+  '#A66CFF', // Purple
+  '#FF8C32', // Orange
+  '#45CFDD', // Cyan
 ]
 
-const FONT_SIZES = [24, 28, 32, 36]
-const BASE_SPEED = 2
+const FONT_SIZES = [28, 32, 36, 40]
+const EMOJI_FONT_SIZES = [40, 48, 56, 64]
+const SPEED = 1 // 降低速度
 const MAX_CONCURRENT = 10
+const OUTLINE_WIDTH = 6 // 白色描邊寬度
+
+// 檢測是否為純 emoji
+function isEmojiOnly(str: string): boolean {
+  const emojiRegex =
+    /^[\p{Emoji}\p{Emoji_Modifier}\p{Emoji_Component}\p{Emoji_Modifier_Base}\p{Emoji_Presentation}\s]+$/u
+  return emojiRegex.test(str)
+}
 
 export function DanmakuCanvas({ messages }: DanmakuCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -92,7 +103,9 @@ export function DanmakuCanvas({ messages }: DanmakuCanvasProps) {
         activeDanmakuRef.current.length < MAX_CONCURRENT
       ) {
         const message = messageQueueRef.current.shift()!
-        const fontSize = FONT_SIZES[Math.floor(Math.random() * FONT_SIZES.length)]
+        const isEmoji = isEmojiOnly(message.content)
+        const fontSizes = isEmoji ? EMOJI_FONT_SIZES : FONT_SIZES
+        const fontSize = fontSizes[Math.floor(Math.random() * fontSizes.length)]
         const color = COLORS[Math.floor(Math.random() * COLORS.length)]
 
         activeDanmakuRef.current.push({
@@ -100,9 +113,10 @@ export function DanmakuCanvas({ messages }: DanmakuCanvasProps) {
           content: message.content,
           x: canvas.width,
           y: Math.random() * (canvas.height - 100) + 50,
-          speed: BASE_SPEED + Math.random() * 2,
+          speed: SPEED,
           color,
           fontSize,
+          isEmoji,
         })
       }
 
@@ -111,23 +125,49 @@ export function DanmakuCanvas({ messages }: DanmakuCanvasProps) {
         // Update position
         danmaku.x -= danmaku.speed
 
+        // Set font
+        ctx.font = `bold ${danmaku.fontSize}px "LINE Seed TW", "Noto Sans TC", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`
+
         // Remove if off-screen
         if (danmaku.x + ctx.measureText(danmaku.content).width < 0) {
           return false
         }
 
-        // Draw danmaku
-        ctx.font = `300 ${danmaku.fontSize}px "LINE Seed TW", "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif`
-        ctx.fillStyle = '#000000'
-        ctx.strokeStyle = danmaku.color
-        // ctx.lineWidth = 3
+        ctx.save()
 
-        // Stroke (outline)
-        ctx.strokeText(danmaku.content, danmaku.x, danmaku.y)
+        if (danmaku.isEmoji) {
+          // ===== Emoji：直接繪製，不加描邊 =====
+          ctx.fillText(danmaku.content, danmaku.x, danmaku.y)
+        } else {
+          // ===== 文字用 strokeText =====
 
-        // Fill (text)
-        ctx.fillStyle = danmaku.color
-        ctx.fillText(danmaku.content, danmaku.x, danmaku.y)
+          // 1. 先繪製陰影層
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
+          ctx.shadowBlur = 6
+          ctx.shadowOffsetX = 3
+          ctx.shadowOffsetY = 3
+          ctx.strokeStyle = 'rgba(0,0,0,0.01)'
+          ctx.lineWidth = OUTLINE_WIDTH
+          ctx.strokeText(danmaku.content, danmaku.x, danmaku.y)
+
+          // 2. 重置陰影，繪製白色描邊
+          ctx.shadowColor = 'transparent'
+          ctx.shadowBlur = 0
+          ctx.shadowOffsetX = 0
+          ctx.shadowOffsetY = 0
+
+          ctx.strokeStyle = '#FFFFFF'
+          ctx.lineWidth = OUTLINE_WIDTH
+          ctx.lineJoin = 'round'
+          ctx.lineCap = 'round'
+          ctx.strokeText(danmaku.content, danmaku.x, danmaku.y)
+
+          // 3. 繪製彩色填充
+          ctx.fillStyle = danmaku.color
+          ctx.fillText(danmaku.content, danmaku.x, danmaku.y)
+        }
+
+        ctx.restore()
 
         return true
       })

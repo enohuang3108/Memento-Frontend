@@ -1,6 +1,7 @@
 /**
  * PhotoWall Component
  * Displays photos in a masonry/grid layout or a slideshow
+ * Playful Geometric Design System
  *
  * Slideshow mode: Backend-controlled playback via WebSocket
  * Grid mode: Client-side rendering of all photos
@@ -39,7 +40,10 @@ export function PhotoWall({
   const observerRef = useRef<IntersectionObserver | null>(null)
 
   // For slideshow cross-fade transition (two-layer toggle approach)
-  const [layers, setLayers] = useState<[Photo | null, Photo | null]>([null, null])
+  const [layers, setLayers] = useState<[Photo | null, Photo | null]>([
+    null,
+    null,
+  ])
   const [activeLayer, setActiveLayer] = useState<0 | 1>(0)
 
   // Filter out failed photos for grid mode
@@ -53,7 +57,10 @@ export function PhotoWall({
     if (mode !== 'slideshow' || !currentPhoto) return
 
     // Check if already displaying this photo
-    if (layers[0]?.id === currentPhoto.id || layers[1]?.id === currentPhoto.id) {
+    if (
+      layers[0]?.id === currentPhoto.id ||
+      layers[1]?.id === currentPhoto.id
+    ) {
       return
     }
 
@@ -180,21 +187,22 @@ export function PhotoWall({
         )}
 
         {/* Debug Info */}
-        {showDebugInfo && !isFullscreen && playlistInfo && layers[activeLayer] && (
-          <div className="absolute top-20 left-4 text-white/50 text-xs font-mono bg-black/50 p-2 rounded pointer-events-none z-50">
-            {playlistInfo.isQueueMode ? (
-              <>
-                Mode: Priority Queue ({playlistInfo.queueLength} remaining)
-              </>
-            ) : (
-              <>
-                Position: {playlistInfo.index + 1}/{playlistInfo.total}
-              </>
-            )}
-            <br />
-            Photo ID: {layers[activeLayer]!.id}
-          </div>
-        )}
+        {showDebugInfo &&
+          !isFullscreen &&
+          playlistInfo &&
+          layers[activeLayer] && (
+            <div className="absolute top-20 left-4 text-white/50 text-xs font-mono bg-foreground/80 px-3 py-2 rounded-xl pointer-events-none z-50 border-2 border-white/20">
+              {playlistInfo.isQueueMode ? (
+                <>Mode: Priority Queue ({playlistInfo.queueLength} remaining)</>
+              ) : (
+                <>
+                  Position: {playlistInfo.index + 1}/{playlistInfo.total}
+                </>
+              )}
+              <br />
+              Photo ID: {layers[activeLayer]!.id}
+            </div>
+          )}
       </div>
     )
   }
@@ -246,7 +254,10 @@ function PhotoItem({ photo, observer, isLoaded, onFail }: PhotoItemProps) {
 
   return (
     <div className="break-inside-avoid mb-4">
-      <div className="relative bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 group">
+      <div
+        className="relative bg-muted rounded-xl overflow-hidden border-2 border-foreground group transition-all duration-200 hover:rotate-[-1deg] hover:scale-[1.02]"
+        style={{ boxShadow: '4px 4px 0px 0px #1E293B' }}
+      >
         {/* Photo */}
         <img
           ref={imgRef}
@@ -271,20 +282,21 @@ function PhotoItem({ photo, observer, isLoaded, onFail }: PhotoItemProps) {
 
         {/* Loading placeholder */}
         {!isLoaded && (
-          <div className="absolute inset-0 bg-gray-700 animate-pulse flex items-center justify-center">
-            <div className="text-gray-500 text-4xl">📸</div>
+          <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
+            <div className="text-text-muted text-4xl">📸</div>
           </div>
         )}
 
         {/* Hover overlay with fullsize image */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-300 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer">
+        <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/70 transition-all duration-300 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer">
           <a
             href={photo.fullUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-white text-sm px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors"
+            className="text-white text-sm px-4 py-2 bg-accent rounded-full font-heading font-bold border-2 border-white hover:bg-primary-hover transition-colors"
+            style={{ boxShadow: '2px 2px 0px 0px white' }}
           >
-            🔍 查看原圖
+            查看原圖
           </a>
         </div>
       </div>
