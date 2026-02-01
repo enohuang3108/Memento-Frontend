@@ -115,9 +115,17 @@ function DisplayPage() {
         break
 
       case 'photo_added':
-        console.log('[Display] New photo added, added to priority queue')
-        setAllPhotos((prev) => [...prev, message.photo])
-        setPriorityQueue((prev) => [...prev, message.photo]) // 加入佇列尾端
+        // 防重複：檢查 driveFileId 是否已存在
+        setAllPhotos((prev) => {
+          if (prev.some((p) => p.driveFileId === message.photo.driveFileId)) {
+            console.log('[Display] Duplicate photo ignored:', message.photo.driveFileId)
+            return prev
+          }
+          console.log('[Display] New photo added, added to priority queue')
+          // 同時更新 priorityQueue（需要在這裡處理以保持原子性）
+          setPriorityQueue((prevQueue) => [...prevQueue, message.photo])
+          return [...prev, message.photo]
+        })
         break
 
       case 'danmaku':
