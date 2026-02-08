@@ -8,7 +8,8 @@
   // Production environment
   "vars": {
     "VITE_API_URL": "https://memento-api.oddlab.cc",
-    "VITE_WS_URL": "wss://memento-api.oddlab.cc"
+    "VITE_WS_URL": "wss://memento-api.oddlab.cc",
+    "VITE_SITE_URL": "https://memento.oddlab.cc"
   },
   "routes": [
     {

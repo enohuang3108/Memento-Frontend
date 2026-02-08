@@ -15,10 +15,37 @@ import { InfoDrawer } from '../components/InfoDrawer'
 import { Logo } from '../components/Logo'
 import { PhotoUpload } from '../components/PhotoUpload'
 import { getEvent, getWebSocketUrl } from '../lib/api'
+import { SITE_NAME, SITE_URL } from '../lib/constants'
 import { getOrCreateSessionId, rememberActivity } from '../lib/session'
 import { useWebSocket } from '../lib/websocket'
 
 export const Route = createFileRoute('/event/$activityId')({
+  loader: async ({ params }) => {
+    const data = await getEvent(params.activityId)
+    return { event: data.event }
+  },
+  head: ({ loaderData, params }) => {
+    const title = loaderData?.event?.title || '活動照片牆'
+    const description = `加入「${title}」，即時上傳照片與彈幕留言！`
+    const url = `${SITE_URL}/event/${params.activityId}`
+
+    return {
+      meta: [
+        { title: `${title} | ${SITE_NAME}` },
+        { name: 'description', content: description },
+        // Open Graph
+        { property: 'og:title', content: title },
+        { property: 'og:description', content: description },
+        { property: 'og:image', content: `${SITE_URL}/og-image.png` },
+        { property: 'og:url', content: url },
+        { property: 'og:type', content: 'website' },
+        // Twitter
+        { name: 'twitter:title', content: title },
+        { name: 'twitter:description', content: description },
+        { name: 'twitter:image', content: `${SITE_URL}/og-image.png` },
+      ],
+    }
+  },
   component: EventPage,
 })
 

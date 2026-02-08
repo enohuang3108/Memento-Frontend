@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
@@ -28,6 +29,16 @@ export const Route = createRootRoute({
       {
         title: 'Memento - 專屬即時照片牆',
       },
+      // PWA meta
+      { name: 'theme-color', content: '#F472B6' },
+      { name: 'mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+      { name: 'apple-mobile-web-app-title', content: 'Memento' },
+      // 預設 OG（子路由可覆蓋）
+      { property: 'og:site_name', content: 'Memento' },
+      { property: 'og:locale', content: 'zh_TW' },
+      { name: 'twitter:card', content: 'summary_large_image' },
     ],
     links: [
       { rel: 'icon', href: '/favicon.webp', type: 'image/webp' },
@@ -45,15 +56,18 @@ export const Route = createRootRoute({
         rel: 'stylesheet',
         href: appCss,
       },
+      // PWA
+      { rel: 'manifest', href: '/manifest.json' },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
     ],
   }),
 
   shellComponent: RootDocument,
 })
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument({ children }: { readonly children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="zh-TW">
       <head>
         <HeadContent />
       </head>

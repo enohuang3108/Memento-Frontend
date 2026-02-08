@@ -17,6 +17,12 @@ import { getOrCreateSessionId } from '../lib/session'
 import { useWebSocket, type ServerMessage } from '../lib/websocket'
 
 export const Route = createFileRoute('/event/$activityId_/display')({
+  head: () => ({
+    meta: [
+      { title: '照片牆顯示 | Memento' },
+      { name: 'robots', content: 'noindex, nofollow' },
+    ],
+  }),
   component: DisplayPage,
 })
 

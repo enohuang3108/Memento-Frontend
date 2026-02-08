@@ -23,7 +23,8 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate:icons": "tsx scripts/generate-icons.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.6",
@@ -46,6 +47,7 @@
     "@cloudflare/vite-plugin": "^1.15.2",
     "@cloudflare/workers-types": "^4.20251117.0",
     "@eslint/js": "^9.39.1",
+    "@napi-rs/canvas": "^0.1.90",
     "@playwright/test": "^1.49.0",
     "@tanstack/devtools-vite": "^0.3.11",
     "@testing-library/dom": "^10.4.0",
@@ -64,6 +66,8 @@
     "globals": "^17.2.0",
     "jsdom": "^27.0.0",
     "prettier": "^3.4.2",
+    "sharp": "^0.34.5",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2",
     "vite": "^7.1.7",
     "vitest": "^3.0.5",

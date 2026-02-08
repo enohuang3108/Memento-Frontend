@@ -4,7 +4,8 @@
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { FolderOpen, Loader2, Sparkles } from 'lucide-react'
+import { FolderOpen, Loader2 } from 'lucide-react'
+import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from '../lib/constants'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import {
@@ -14,7 +15,25 @@ import {
 import { Logo } from '../components/Logo'
 import { createEvent } from '../lib/api'
 
-export const Route = createFileRoute('/')({ component: HomePage })
+export const Route = createFileRoute('/')({
+  head: () => ({
+    meta: [
+      { title: SITE_TITLE },
+      { name: 'description', content: SITE_DESCRIPTION },
+      // Open Graph
+      { property: 'og:title', content: SITE_TITLE },
+      { property: 'og:description', content: SITE_DESCRIPTION },
+      { property: 'og:image', content: `${SITE_URL}/og-image.png` },
+      { property: 'og:url', content: `${SITE_URL}/` },
+      { property: 'og:type', content: 'website' },
+      // Twitter
+      { name: 'twitter:title', content: SITE_TITLE },
+      { name: 'twitter:description', content: SITE_DESCRIPTION },
+      { name: 'twitter:image', content: `${SITE_URL}/og-image.png` },
+    ],
+  }),
+  component: HomePage,
+})
 
 /**
  * Extract Google Drive folder ID from various URL formats
@@ -90,8 +109,7 @@ function HomePage() {
         <div className="text-left animate-pop-in">
           {/* Pill Badge */}
           <div className="pill-badge bg-tertiary text-foreground mb-6">
-            <Sparkles className="w-4 h-4" />
-            <span>即時照片分享</span>
+            <span>分享美好時光</span>
           </div>
 
           <h2 className="text-6xl lg:text-7xl font-heading font-bold text-text-main mb-2 tracking-tight leading-tight">
@@ -102,7 +120,7 @@ function HomePage() {
           </div>
 
           <p className="text-lg text-text-muted font-body mb-8 leading-relaxed max-w-md">
-            打造您的專屬即時照片牆，讓每一刻精彩瞬間即時分享
+            將 Google Drive 變成你的專屬照片牆，讓每一刻精彩瞬間即時分享
           </p>
 
           <div className="flex flex-wrap gap-4 text-sm text-text-muted">
@@ -117,6 +135,10 @@ function HomePage() {
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-tertiary rounded-full border-2 border-foreground"></div>
               <span className="font-bold">無限照片</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-quaternary rounded-full border-2 border-foreground"></div>
+              <span className="font-bold">無需登入</span>
             </div>
           </div>
         </div>
