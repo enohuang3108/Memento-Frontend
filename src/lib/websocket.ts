@@ -40,8 +40,8 @@ export interface UseWebSocketOptions {
   onClose?: () => void
   onError?: (error: Event) => void
   autoReconnect?: boolean
+  /** 重連間隔（毫秒），預設 7000 */
   reconnectInterval?: number
-  maxReconnectAttempts?: number
 }
 
 export function useWebSocket(options: UseWebSocketOptions) {
@@ -54,8 +54,7 @@ export function useWebSocket(options: UseWebSocketOptions) {
     onClose,
     onError,
     autoReconnect = true,
-    reconnectInterval: _reconnectInterval = 1000,
-    maxReconnectAttempts = 5,
+    reconnectInterval = 7000,
   } = options
 
   const wsRef = useRef<WebSocket | null>(null)
@@ -107,15 +106,14 @@ export function useWebSocket(options: UseWebSocketOptions) {
       setIsConnecting(false)
       savedCallbacks.current.onClose?.()
 
-      // Auto-reconnect logic
-      if (autoReconnect && reconnectAttemptsRef.current < maxReconnectAttempts) {
+      // Auto-reconnect logic - 無限重連
+      if (autoReconnect) {
         reconnectAttemptsRef.current++
-        const backoff = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000)
 
         reconnectTimeoutRef.current = window.setTimeout(() => {
           console.log(`Reconnecting... (attempt ${reconnectAttemptsRef.current})`)
           connect()
-        }, backoff)
+        }, reconnectInterval)
       }
     }
 
@@ -123,7 +121,7 @@ export function useWebSocket(options: UseWebSocketOptions) {
       console.error('WebSocket error:', error)
       savedCallbacks.current.onError?.(error)
     }
-  }, [url, sessionId, role, autoReconnect, maxReconnectAttempts])
+  }, [url, sessionId, role, autoReconnect, reconnectInterval])
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

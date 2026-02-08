@@ -40,25 +40,32 @@ function DisplayPage() {
   const [danmakuMessages, setDanmakuMessages] = useState<DanmakuItem[]>([])
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // ===== Slideshow 狀態（優先佇列設計）=====
-  // 所有照片（輪播用，依 uploadedAt 排序）
+  // ===== Slideshow 狀態（每張照片播滿 5 秒設計）=====
+  // 所有照片（輪播用）
   const [allPhotos, setAllPhotos] = useState<Photo[]>([])
-  // 優先佇列（FIFO，新照片加入尾端，從頭部播放）
-  const [priorityQueue, setPriorityQueue] = useState<Photo[]>([])
-  // 輪播索引（只在佇列為空時使用）
+  // 待播佇列（FIFO，新照片加入尾端，計時器到期時才從頭部取出播放）
+  const [pendingQueue, setPendingQueue] = useState<Photo[]>([])
+  // 當前播放的照片（只在計時器觸發時才更新）
+  const [currentPhoto, setCurrentPhoto] = useState<Photo | null>(null)
+  // 輪播索引（追蹤輪播位置）
   const [rotationIndex, setRotationIndex] = useState(0)
 
   // 使用 ref 追蹤狀態，避免計時器 closure 問題
-  const priorityQueueRef = useRef<Photo[]>([])
+  const pendingQueueRef = useRef<Photo[]>([])
   const allPhotosRef = useRef<Photo[]>([])
+  const rotationIndexRef = useRef(0)
 
   useEffect(() => {
-    priorityQueueRef.current = priorityQueue
-  }, [priorityQueue])
+    pendingQueueRef.current = pendingQueue
+  }, [pendingQueue])
 
   useEffect(() => {
     allPhotosRef.current = allPhotos
   }, [allPhotos])
+
+  useEffect(() => {
+    rotationIndexRef.current = rotationIndex
+  }, [rotationIndex])
 
   // Fetch initial event data
   const { data, isLoading } = useQuery({
@@ -66,43 +73,41 @@ function DisplayPage() {
     queryFn: () => getEvent(activityId),
   })
 
-  // 當前照片計算
-  const currentPhoto: Photo | null = useMemo(() => {
-    if (priorityQueue.length > 0) return priorityQueue[0]
-    if (allPhotos.length === 0) return null
-    return allPhotos[rotationIndex % allPhotos.length]
-  }, [priorityQueue, allPhotos, rotationIndex])
-
   // 播放列表資訊
   const playlistInfo = useMemo(() => {
-    if (allPhotos.length === 0) return null
-    const isQueueMode = priorityQueue.length > 0
+    if (allPhotos.length === 0 && pendingQueue.length === 0) return null
+    const isQueueMode = pendingQueue.length > 0
     return {
-      index: isQueueMode ? allPhotos.length : rotationIndex,
+      index: rotationIndex,
       total: allPhotos.length,
-      queueLength: priorityQueue.length,
+      queueLength: pendingQueue.length,
       isQueueMode,
     }
-  }, [allPhotos.length, priorityQueue.length, rotationIndex])
+  }, [allPhotos.length, pendingQueue.length, rotationIndex])
 
-  // 計時器：只在「有照片↔沒照片」時啟動/停止
-  const hasPhotos = allPhotos.length > 0 || priorityQueue.length > 0
+  // 計時器：每 5 秒決定下一張照片
+  const hasPhotos = allPhotos.length > 0 || pendingQueue.length > 0
 
   useEffect(() => {
     if (!hasPhotos) return
 
     const timer = setInterval(() => {
-      if (priorityQueueRef.current.length > 0) {
-        // 模式 A：播放佇列 → 移除剛播完的照片
-        setPriorityQueue((prev) => prev.slice(1))
+      // 優先從待播佇列取出（不影響輪播索引）
+      if (pendingQueueRef.current.length > 0) {
+        const nextPhoto = pendingQueueRef.current[0]
+        setCurrentPhoto(nextPhoto)
+        setPendingQueue((prev) => prev.slice(1))
       } else if (allPhotosRef.current.length > 0) {
-        // 模式 B：正常輪播 → 下一張
-        setRotationIndex((prev) => (prev + 1) % allPhotosRef.current.length)
+        // 待播佇列空了，繼續輪播下一張
+        const nextIndex =
+          (rotationIndexRef.current + 1) % allPhotosRef.current.length
+        setRotationIndex(nextIndex)
+        setCurrentPhoto(allPhotosRef.current[nextIndex])
       }
     }, 5000)
 
     return () => clearInterval(timer)
-  }, [hasPhotos]) // ← 只依賴「是否有照片」
+  }, [hasPhotos])
 
   // WebSocket connection
   const handleMessage = useCallback((message: ServerMessage) => {
@@ -117,11 +122,15 @@ function DisplayPage() {
         )
         setAllPhotos(message.photos)
         setRotationIndex(0)
-        setPriorityQueue([]) // 初次連線，沒有「新」照片
+        setPendingQueue([]) // 初次連線，沒有「新」照片
+        // 設定初始播放的照片
+        if (message.photos.length > 0) {
+          setCurrentPhoto(message.photos[0])
+        }
         break
 
       case 'photo_added':
-        // 防重複：檢查 driveFileId 是否已存在
+        // 防重複：分別檢查 allPhotos 和 pendingQueue
         setAllPhotos((prev) => {
           if (prev.some((p) => p.driveFileId === message.photo.driveFileId)) {
             console.log(
@@ -130,10 +139,16 @@ function DisplayPage() {
             )
             return prev
           }
-          console.log('[Display] New photo added, added to priority queue')
-          // 同時更新 priorityQueue（需要在這裡處理以保持原子性）
-          setPriorityQueue((prevQueue) => [...prevQueue, message.photo])
+          console.log('[Display] New photo added to allPhotos')
           return [...prev, message.photo]
+        })
+        // 獨立更新 pendingQueue，避免在 setAllPhotos callback 中產生副作用
+        setPendingQueue((prevQueue) => {
+          if (prevQueue.some((p) => p.driveFileId === message.photo.driveFileId)) {
+            return prevQueue
+          }
+          console.log('[Display] New photo added to pending queue')
+          return [...prevQueue, message.photo]
         })
         break
 
