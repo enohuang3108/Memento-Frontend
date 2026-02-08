@@ -80,13 +80,16 @@ function EventPage() {
       }
       // Update title from joined message if available
       if (message.type === 'joined' && message.title) {
-        queryClient.setQueryData(['event', activityId], (oldData: typeof data) => {
-          if (!oldData) return oldData
-          return {
-            ...oldData,
-            event: { ...oldData.event, title: message.title }
+        queryClient.setQueryData(
+          ['event', activityId],
+          (oldData: typeof data) => {
+            if (!oldData) return oldData
+            return {
+              ...oldData,
+              event: { ...oldData.event, title: message.title },
+            }
           }
-        })
+        )
       }
     },
   })
@@ -150,7 +153,7 @@ function EventPage() {
   )}`
 
   return (
-    <div className="min-h-screen bg-background pb-24 pt-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background pb-24 pt-8 relative overflow-hidden">
       {/* Logo in top-left corner */}
       <Logo />
 
@@ -160,7 +163,7 @@ function EventPage() {
       <div className="max-w-2xl mx-auto px-4 py-6 relative z-10">
         {/* Enhanced Header */}
         <div className="mb-8 text-center animate-pop-in">
-          <h1 className="text-4xl font-heading font-bold text-text-main mb-3 tracking-tight">
+          <h1 className="text-3xl font-heading font-bold text-text-main mb-3 tracking-tight">
             {event.title || '活動照片牆'}
           </h1>
 
