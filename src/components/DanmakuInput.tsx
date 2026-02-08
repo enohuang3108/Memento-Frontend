@@ -13,6 +13,7 @@ interface DanmakuInputProps {
 
 const QUICK_EMOJIS = ['❤️', '🎉', '㊗️', '🎊', '🎈']
 const EMOJI_COOLDOWN_MS = 1000 // 1秒冷卻時間
+const MAX_DANMAKU_LENGTH = 50
 
 // 日式貼紙白色描邊效果 - 用多層 text-shadow 模擬輪廓 (4px)
 const stickerOutlineStyle = {
@@ -71,7 +72,7 @@ export function DanmakuInput({ onSend, disabled = false }: DanmakuInputProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-md mx-auto p-4">
+    <div className="flex flex-col gap-6 w-full mx-auto py-4">
       {/* Japanese Sticker Style Emojis - White Outline */}
       <div className="flex gap-2 justify-center">
         {QUICK_EMOJIS.map((emoji) => {
@@ -112,8 +113,22 @@ export function DanmakuInput({ onSend, disabled = false }: DanmakuInputProps) {
             onChange={(e) => setContent(e.target.value)}
             placeholder="發送彈幕..."
             disabled={disabled}
-            className="w-full bg-transparent border-none focus:outline-none text-text-main placeholder:text-text-muted/50 text-lg px-5 py-3 pr-20 rounded-full font-body"
+            maxLength={MAX_DANMAKU_LENGTH}
+            className="w-full bg-transparent border-none focus:outline-none text-text-main placeholder:text-text-muted/50 text-lg px-5 py-3 pr-36 rounded-full font-body"
           />
+          {content.length > 0 && (
+            <span
+              className={`absolute right-22 top-1/2 -translate-y-1/2 text-xs font-body transition-colors ${
+                content.length >= MAX_DANMAKU_LENGTH
+                  ? 'text-red-500 font-bold'
+                  : content.length >= MAX_DANMAKU_LENGTH - 10
+                    ? 'text-amber-500'
+                    : 'text-text-muted/50'
+              }`}
+            >
+              {content.length}/{MAX_DANMAKU_LENGTH}
+            </span>
+          )}
           <button
             type="submit"
             disabled={disabled || !content.trim()}
