@@ -182,7 +182,10 @@ function HomePage() {
                     <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
                       <li>建立 Google Drive 資料夾，並設定資料夾名稱</li>
                       <li>右鍵點擊 → 選擇「共用」</li>
-                      <li>設定為「知道連結的人可以檢視」</li>
+                      <li>
+                        設定為知道連結的人都能編輯，或是僅允許
+                        oddlabcc@gmail.com 編輯
+                      </li>
                       <li>複製連結或網址末端的 ID</li>
                     </ol>
                   </div>
