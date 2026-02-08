@@ -6,7 +6,6 @@
 
 import { useRef, useState, type ChangeEvent } from 'react'
 import { uploadPhotoToGoogleDrive, validatePhotoFile } from '../lib/googleDrive'
-import { DotPatternSubtle } from './decorations'
 
 const MAX_PHOTOS = 50
 
@@ -45,7 +44,9 @@ export function PhotoUpload({
   onUploadError,
 }: PhotoUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<PhotoFile[]>([])
-  const [uploadStatuses, setUploadStatuses] = useState<Map<string, UploadStatus>>(new Map())
+  const [uploadStatuses, setUploadStatuses] = useState<
+    Map<string, UploadStatus>
+  >(new Map())
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -232,7 +233,7 @@ export function PhotoUpload({
 
   return (
     <div className="card-sticker p-6 relative overflow-hidden">
-      <DotPatternSubtle className="opacity-50" />
+      {/* <DotPatternSubtle className="opacity-50" /> */}
 
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-4">
@@ -254,12 +255,18 @@ export function PhotoUpload({
               className="flex flex-col items-center justify-center w-full h-64 border-3 border-dashed border-accent/50 rounded-2xl cursor-pointer hover:border-accent hover:bg-accent/5 transition-all group"
             >
               <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-                <div className="text-6xl mb-4 group-hover:animate-bounce-slight">📸</div>
+                <div className="text-6xl mb-4 group-hover:animate-bounce-slight">
+                  📸
+                </div>
                 <p className="mb-2 text-sm text-text-main font-heading font-bold">
                   點擊選擇照片
                 </p>
-                <p className="text-xs text-text-muted">JPEG, PNG, GIF, WebP (最大 20MB)</p>
-                <p className="text-xs text-text-muted mt-1">一次最多可選擇 {MAX_PHOTOS} 張照片</p>
+                <p className="text-xs text-text-muted">
+                  JPEG, PNG, GIF, WebP (最大 20MB)
+                </p>
+                <p className="text-xs text-text-muted mt-1">
+                  一次最多可選擇 {MAX_PHOTOS} 張照片
+                </p>
               </div>
               <input
                 ref={fileInputRef}
@@ -274,7 +281,9 @@ export function PhotoUpload({
 
             {error && (
               <div className="mt-4 p-3 bg-red-50 border-2 border-red-400 rounded-xl">
-                <p className="text-sm text-red-600 font-bold whitespace-pre-line">{error}</p>
+                <p className="text-sm text-red-600 font-bold whitespace-pre-line">
+                  {error}
+                </p>
               </div>
             )}
           </div>
@@ -325,10 +334,15 @@ export function PhotoUpload({
                           </div>
                         )}
                         {status.status === 'success' && (
-                          <div className="text-quaternary text-3xl font-bold">✓</div>
+                          <div className="text-quaternary text-3xl font-bold">
+                            ✓
+                          </div>
                         )}
                         {status.status === 'error' && (
-                          <div className="text-secondary text-3xl font-bold" title={status.error}>
+                          <div
+                            className="text-secondary text-3xl font-bold"
+                            title={status.error}
+                          >
                             ✕
                           </div>
                         )}
@@ -363,7 +377,9 @@ export function PhotoUpload({
             {/* Error Message */}
             {error && (
               <div className="mb-4 p-3 bg-red-50 border-2 border-red-400 rounded-xl">
-                <p className="text-sm text-red-600 font-bold whitespace-pre-line">{error}</p>
+                <p className="text-sm text-red-600 font-bold whitespace-pre-line">
+                  {error}
+                </p>
               </div>
             )}
 
@@ -374,7 +390,9 @@ export function PhotoUpload({
                 disabled={isUploading}
                 className="flex-1 btn-candy"
               >
-                {isUploading ? `上傳中 (${uploadedCount}/${selectedFiles.length})` : `上傳 ${selectedFiles.length} 張照片`}
+                {isUploading
+                  ? `上傳中 (${uploadedCount}/${selectedFiles.length})`
+                  : `上傳 ${selectedFiles.length} 張照片`}
               </button>
               <button
                 onClick={handleCancel}

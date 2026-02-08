@@ -6,15 +6,7 @@
  */
 
 import { useNavigate } from '@tanstack/react-router'
-import {
-  Camera,
-  Check,
-  Copy,
-  QrCode,
-  Users,
-  Wifi,
-  WifiOff,
-} from 'lucide-react'
+import { Camera, Check, Copy, QrCode, Users, Wifi, WifiOff } from 'lucide-react'
 import type { TouchEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DotPatternSubtle } from './decorations'

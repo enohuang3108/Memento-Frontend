@@ -10,7 +10,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { DanmakuInput } from '../components/DanmakuInput'
-import { DotPatternSubtle, GeometricBackground } from '../components/decorations'
+import { GeometricBackground } from '../components/decorations'
 import { InfoDrawer } from '../components/InfoDrawer'
 import { Logo } from '../components/Logo'
 import { PhotoUpload } from '../components/PhotoUpload'
@@ -117,7 +117,7 @@ function EventPage() {
       <Logo />
 
       {/* Decorative Background */}
-      <DotPatternSubtle opacity={0.05} />
+      <GeometricBackground variant="default" />
 
       <div className="max-w-2xl mx-auto px-4 py-6 relative z-10">
         {/* Enhanced Header */}
@@ -140,14 +140,20 @@ function EventPage() {
 
         {/* Primary Actions - Messages */}
         {event.status === 'active' && (
-          <div className="mb-6 animate-pop-in" style={{ animationDelay: '0.1s' }}>
+          <div
+            className="mb-6 animate-pop-in"
+            style={{ animationDelay: '0.1s' }}
+          >
             <DanmakuInput onSend={handleDanmakuSend} disabled={!isConnected} />
           </div>
         )}
 
         {/* Primary Actions - Photo Upload */}
         {event.status === 'active' && (
-          <div className="mb-6 animate-pop-in" style={{ animationDelay: '0.2s' }}>
+          <div
+            className="mb-6 animate-pop-in"
+            style={{ animationDelay: '0.2s' }}
+          >
             <PhotoUpload
               activityId={activityId}
               sessionId={sessionId}

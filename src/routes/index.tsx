@@ -8,7 +8,6 @@ import { FolderOpen, Loader2, Sparkles } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import {
-  DotPatternYellow,
   GeometricBackground,
   SquiggleUnderline,
 } from '../components/decorations'
@@ -45,7 +44,6 @@ function extractDriveFolderId(input: string): string | null {
 
 function HomePage() {
   const navigate = useNavigate()
-  const [title, setTitle] = useState('')
   const [driveFolderId, setDriveFolderId] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -65,7 +63,6 @@ function HomePage() {
 
     try {
       const response = await createEvent({
-        title: title.trim() || undefined,
         driveFolderId: extractedId,
       })
 
@@ -81,13 +78,12 @@ function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background relative overflow-hidden">
+    <div className="min-h-screen pt-16 lg:pt-0 flex items-center justify-center p-4 bg-background relative overflow-hidden">
       {/* Logo in top-left corner */}
       <Logo />
 
       {/* Decorative Background */}
       <GeometricBackground variant="default" />
-      <DotPatternYellow opacity={0.08} spacing={30} />
 
       <div className="max-w-4xl w-full relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         {/* Left Column: Hero Text */}
@@ -135,30 +131,11 @@ function HomePage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label
-                  htmlFor="title"
-                  className="flex items-center gap-2 text-sm font-bold text-text-main mb-2 font-heading"
-                >
-                  <Sparkles className="w-4 h-4 text-accent" />
-                  活動名稱
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  maxLength={100}
-                  placeholder="一二三木頭人"
-                  className="input-playful"
-                />
-              </div>
-
-              <div>
-                <label
                   htmlFor="driveFolderId"
                   className="flex items-center gap-2 text-sm font-bold text-text-main mb-2 font-heading"
                 >
                   <FolderOpen className="w-4 h-4 text-accent" />
-                  Google Drive 資料夾 <span className="text-secondary">*</span>
+                  Google Drive 連結 <span className="text-secondary">*</span>
                 </label>
                 <input
                   type="text"
@@ -169,7 +146,10 @@ function HomePage() {
                   placeholder="貼上連結或資料夾 ID"
                   className="input-playful font-mono text-sm"
                 />
-                <details className="mt-3 group">
+                <p className="text-xs text-text-muted mt-2">
+                  活動名稱將使用此資料夾的名稱
+                </p>
+                <details open className="mt-3 group">
                   <summary className="text-xs text-accent hover:text-primary-hover cursor-pointer font-bold list-none flex items-center gap-1.5 w-fit">
                     <span className="group-open:rotate-90 transition-transform">
                       ▶
@@ -178,7 +158,7 @@ function HomePage() {
                   </summary>
                   <div className="mt-2 p-4 bg-muted rounded-xl text-xs text-text-muted border-2 border-border">
                     <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
-                      <li>建立 Google Drive 資料夾</li>
+                      <li>建立 Google Drive 資料夾，並設定資料夾名稱</li>
                       <li>右鍵點擊 → 選擇「共用」</li>
                       <li>設定為「知道連結的人可以檢視」</li>
                       <li>複製連結或網址末端的 ID</li>

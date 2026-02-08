@@ -118,7 +118,10 @@ function DisplayPage() {
         // 防重複：檢查 driveFileId 是否已存在
         setAllPhotos((prev) => {
           if (prev.some((p) => p.driveFileId === message.photo.driveFileId)) {
-            console.log('[Display] Duplicate photo ignored:', message.photo.driveFileId)
+            console.log(
+              '[Display] Duplicate photo ignored:',
+              message.photo.driveFileId
+            )
             return prev
           }
           console.log('[Display] New photo added, added to priority queue')
@@ -188,9 +191,7 @@ function DisplayPage() {
       <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
         <DotPatternYellow opacity={0.1} spacing={30} />
         <div className="text-center relative z-10">
-          <div
-            className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"
-          />
+          <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-text-main text-xl font-heading font-bold">
             載入中...
           </p>
