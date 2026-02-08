@@ -5,7 +5,7 @@
  */
 
 import { EventNotFound } from '@/components/EventNotFound'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
@@ -26,6 +26,7 @@ function EventPage() {
   const { activityId } = Route.useParams()
   const [sessionId] = useState(() => getOrCreateSessionId(activityId))
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
   // Fetch event data
   const { data, isLoading, error, refetch } = useQuery({
@@ -49,6 +50,16 @@ function EventPage() {
     onMessage: (message) => {
       if (message.type === 'activity_ended') {
         refetch()
+      }
+      // Update title from joined message if available
+      if (message.type === 'joined' && message.title) {
+        queryClient.setQueryData(['event', activityId], (oldData: typeof data) => {
+          if (!oldData) return oldData
+          return {
+            ...oldData,
+            event: { ...oldData.event, title: message.title }
+          }
+        })
       }
     },
   })
