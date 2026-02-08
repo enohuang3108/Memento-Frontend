@@ -5,6 +5,7 @@ import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 
 import appCss from '../styles.css?url'
+import { SITE_URL } from '../lib/constants'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -30,7 +31,7 @@ export const Route = createRootRoute({
         title: 'Memento - 專屬即時照片牆',
       },
       // PWA meta
-      { name: 'theme-color', content: '#F472B6' },
+      { name: 'theme-color', content: '#8b5cf6' },
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
@@ -38,7 +39,9 @@ export const Route = createRootRoute({
       // 預設 OG（子路由可覆蓋）
       { property: 'og:site_name', content: 'Memento' },
       { property: 'og:locale', content: 'zh_TW' },
+      { property: 'og:image', content: `${SITE_URL}/og-image.png` },
       { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:image', content: `${SITE_URL}/og-image.png` },
     ],
     links: [
       { rel: 'icon', href: '/favicon.webp', type: 'image/webp' },
