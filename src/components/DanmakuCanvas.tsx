@@ -41,8 +41,8 @@ const COLORS = [
 
 const FONT_SIZES = [28, 32, 36, 40]
 const EMOJI_FONT_SIZES = [40, 48, 56, 64]
-const SPEED = 1 // 降低速度
-const MAX_CONCURRENT = 10
+const SPEED_PX_PER_SEC = 150 // 像素/秒，時間基準速度
+const MAX_CONCURRENT = 30
 const OUTLINE_WIDTH = 6 // 白色描邊寬度
 
 // 檢測是否為純 emoji
@@ -59,6 +59,7 @@ export function DanmakuCanvas({ messages }: DanmakuCanvasProps) {
   const messageQueueRef = useRef<DanmakuMessage[]>([])
   const processedIdsRef = useRef<Set<string>>(new Set())
   const animationFrameRef = useRef<number | undefined>(undefined)
+  const lastTimeRef = useRef<number>(0)
 
   // Update dimensions on resize
   useEffect(() => {
@@ -90,10 +91,19 @@ export function DanmakuCanvas({ messages }: DanmakuCanvasProps) {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', {
+      // 脫離主執行緒同步，減少輸入延遲
+      desynchronized: true,
+      // 不需要讀取 Canvas 內容，啟用優化
+      willReadFrequently: false,
+    })
     if (!ctx) return
 
-    const animate = () => {
+    const animate = (timestamp: number) => {
+      // 計算 delta time（秒）
+      const deltaTime = lastTimeRef.current ? (timestamp - lastTimeRef.current) / 1000 : 0
+      lastTimeRef.current = timestamp
+
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
@@ -113,7 +123,7 @@ export function DanmakuCanvas({ messages }: DanmakuCanvasProps) {
           content: message.content,
           x: canvas.width,
           y: Math.random() * (canvas.height - 100) + 50,
-          speed: SPEED,
+          speed: SPEED_PX_PER_SEC,
           color,
           fontSize,
           isEmoji,
@@ -122,8 +132,8 @@ export function DanmakuCanvas({ messages }: DanmakuCanvasProps) {
 
       // Update and draw active danmaku
       activeDanmakuRef.current = activeDanmakuRef.current.filter((danmaku) => {
-        // Update position
-        danmaku.x -= danmaku.speed
+        // 時間基準移動：速度 × delta time
+        danmaku.x -= danmaku.speed * deltaTime
 
         // Set font
         ctx.font = `bold ${danmaku.fontSize}px "LINE Seed TW", "Noto Sans TC", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`
@@ -175,7 +185,8 @@ export function DanmakuCanvas({ messages }: DanmakuCanvasProps) {
       animationFrameRef.current = requestAnimationFrame(animate)
     }
 
-    animate()
+    // 使用 requestAnimationFrame 啟動，確保第一幀就有 timestamp
+    animationFrameRef.current = requestAnimationFrame(animate)
 
     return () => {
       if (animationFrameRef.current) {
@@ -193,6 +204,11 @@ export function DanmakuCanvas({ messages }: DanmakuCanvasProps) {
       style={{
         width: dimensions.width,
         height: dimensions.height,
+        // GPU 加速：創建獨立合成層，避免與照片層互相影響
+        transform: 'translateZ(0)',
+        willChange: 'transform',
+        // 防止子像素渲染造成模糊
+        backfaceVisibility: 'hidden',
       }}
     />
   )

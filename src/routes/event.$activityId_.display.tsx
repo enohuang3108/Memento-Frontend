@@ -5,14 +5,16 @@
  */
 
 import { EventNotFound } from '@/components/EventNotFound'
+import { useSlideshowTimer } from '@/hooks/useSlideshowTimer'
+import { useSlideshowStore } from '@/stores/slideshowStore'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Maximize } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DanmakuCanvas } from '../components/DanmakuCanvas'
 import { Circle, DotPatternYellow, Square } from '../components/decorations'
 import { PhotoWall } from '../components/PhotoWall'
-import { getEvent, getWebSocketUrl, type Photo } from '../lib/api'
+import { getEvent, getWebSocketUrl } from '../lib/api'
 import { getOrCreateSessionId } from '../lib/session'
 import { useWebSocket, type ServerMessage } from '../lib/websocket'
 
@@ -40,32 +42,25 @@ function DisplayPage() {
   const [danmakuMessages, setDanmakuMessages] = useState<DanmakuItem[]>([])
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // ===== Slideshow 狀態（每張照片播滿 5 秒設計）=====
-  // 所有照片（輪播用）
-  const [allPhotos, setAllPhotos] = useState<Photo[]>([])
-  // 待播佇列（FIFO，新照片加入尾端，計時器到期時才從頭部取出播放）
-  const [pendingQueue, setPendingQueue] = useState<Photo[]>([])
-  // 當前播放的照片（只在計時器觸發時才更新）
-  const [currentPhoto, setCurrentPhoto] = useState<Photo | null>(null)
-  // 輪播索引（追蹤輪播位置）
-  const [rotationIndex, setRotationIndex] = useState(0)
+  // ===== Slideshow Store =====
+  const currentPhoto = useSlideshowStore((s) => s.currentPhoto)
+  const allPhotos = useSlideshowStore((s) => s.allPhotos)
+  const pendingQueue = useSlideshowStore((s) => s.pendingQueue)
+  const rotationIndex = useSlideshowStore((s) => s.rotationIndex)
+  const initialize = useSlideshowStore((s) => s.initialize)
+  const addPhoto = useSlideshowStore((s) => s.addPhoto)
+  const reset = useSlideshowStore((s) => s.reset)
 
-  // 使用 ref 追蹤狀態，避免計時器 closure 問題
-  const pendingQueueRef = useRef<Photo[]>([])
-  const allPhotosRef = useRef<Photo[]>([])
-  const rotationIndexRef = useRef(0)
-
+  // Reset store on unmount
   useEffect(() => {
-    pendingQueueRef.current = pendingQueue
-  }, [pendingQueue])
+    return () => {
+      reset()
+    }
+  }, [reset])
 
-  useEffect(() => {
-    allPhotosRef.current = allPhotos
-  }, [allPhotos])
-
-  useEffect(() => {
-    rotationIndexRef.current = rotationIndex
-  }, [rotationIndex])
+  // Slideshow timer
+  const hasPhotos = allPhotos.length > 0 || pendingQueue.length > 0
+  useSlideshowTimer(hasPhotos)
 
   // Fetch initial event data
   const { data, isLoading } = useQuery({
@@ -85,102 +80,56 @@ function DisplayPage() {
     }
   }, [allPhotos.length, pendingQueue.length, rotationIndex])
 
-  // 計時器：每 5 秒決定下一張照片
-  const hasPhotos = allPhotos.length > 0 || pendingQueue.length > 0
+  // WebSocket message handler
+  const handleMessage = useCallback(
+    (message: ServerMessage) => {
+      console.log('[Display] WebSocket message:', message.type, message)
 
-  useEffect(() => {
-    if (!hasPhotos) return
+      switch (message.type) {
+        case 'joined':
+          console.log(
+            '[Display] Joined - received',
+            message.photos.length,
+            'photos'
+          )
+          initialize(message.photos)
+          break
 
-    const timer = setInterval(() => {
-      // 優先從待播佇列取出（不影響輪播索引）
-      if (pendingQueueRef.current.length > 0) {
-        const nextPhoto = pendingQueueRef.current[0]
-        setCurrentPhoto(nextPhoto)
-        setPendingQueue((prev) => prev.slice(1))
-      } else if (allPhotosRef.current.length > 0) {
-        // 待播佇列空了，繼續輪播下一張
-        const nextIndex =
-          (rotationIndexRef.current + 1) % allPhotosRef.current.length
-        setRotationIndex(nextIndex)
-        setCurrentPhoto(allPhotosRef.current[nextIndex])
+        case 'photo_added':
+          console.log('[Display] New photo:', message.photo.driveFileId)
+          addPhoto(message.photo)
+          break
+
+        case 'danmaku':
+          setDanmakuMessages((prev) => [
+            ...prev,
+            {
+              id: message.id,
+              content: message.content,
+              sessionId: message.sessionId,
+              timestamp: message.timestamp,
+            },
+          ])
+          break
+
+        case 'activity_ended':
+          alert('活動已結束')
+          break
+
+        case 'error':
+          console.error('WebSocket error:', message.message)
+          break
       }
-    }, 5000)
-
-    return () => clearInterval(timer)
-  }, [hasPhotos])
+    },
+    [initialize, addPhoto]
+  )
 
   // WebSocket connection
-  const handleMessage = useCallback((message: ServerMessage) => {
-    console.log('[Display] WebSocket message:', message.type, message)
-
-    switch (message.type) {
-      case 'joined':
-        console.log(
-          '[Display] Joined - received',
-          message.photos.length,
-          'photos'
-        )
-        setAllPhotos(message.photos)
-        setRotationIndex(0)
-        setPendingQueue([]) // 初次連線，沒有「新」照片
-        // 設定初始播放的照片
-        if (message.photos.length > 0) {
-          setCurrentPhoto(message.photos[0])
-        }
-        break
-
-      case 'photo_added':
-        // 防重複：分別檢查 allPhotos 和 pendingQueue
-        setAllPhotos((prev) => {
-          if (prev.some((p) => p.driveFileId === message.photo.driveFileId)) {
-            console.log(
-              '[Display] Duplicate photo ignored:',
-              message.photo.driveFileId
-            )
-            return prev
-          }
-          console.log('[Display] New photo added to allPhotos')
-          return [...prev, message.photo]
-        })
-        // 獨立更新 pendingQueue，避免在 setAllPhotos callback 中產生副作用
-        setPendingQueue((prevQueue) => {
-          if (prevQueue.some((p) => p.driveFileId === message.photo.driveFileId)) {
-            return prevQueue
-          }
-          console.log('[Display] New photo added to pending queue')
-          return [...prevQueue, message.photo]
-        })
-        break
-
-      case 'danmaku':
-        // Add danmaku message
-        setDanmakuMessages((prev) => [
-          ...prev,
-          {
-            id: message.id,
-            content: message.content,
-            sessionId: message.sessionId,
-            timestamp: message.timestamp,
-          },
-        ])
-        break
-
-      case 'activity_ended':
-        // Show ended notification
-        alert('活動已結束')
-        break
-
-      case 'error':
-        console.error('WebSocket error:', message.message)
-        break
-    }
-  }, [])
-
   const wsUrl = getWebSocketUrl(activityId)
   const { isConnected } = useWebSocket({
     url: wsUrl,
     sessionId,
-    role: 'display', // Identify as Display client for backend-controlled playback
+    role: 'display',
     onMessage: handleMessage,
   })
 

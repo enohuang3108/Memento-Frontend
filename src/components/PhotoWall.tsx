@@ -147,7 +147,14 @@ export function PhotoWall({
   // Slideshow Mode (Backend-controlled)
   if (mode === 'slideshow') {
     return (
-      <div className="h-full w-full relative bg-black overflow-hidden">
+      <div
+        className="h-full w-full relative bg-black overflow-hidden"
+        style={{
+          // GPU 加速：創建獨立合成層，避免與彈幕層互相影響
+          transform: 'translateZ(0)',
+          willChange: 'opacity',
+        }}
+      >
         {/* Layer 0 */}
         {layers[0] && (
           <div
