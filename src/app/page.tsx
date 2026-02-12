@@ -1,135 +1,210 @@
 "use client";
 
+/**
+ * Home Page - Create Activity
+ * Playful Geometric Design System
+ */
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { FolderOpen, Loader2 } from "lucide-react";
+import { Logo } from "@/components/Logo";
+import {
+  GeometricBackground,
+  SquiggleUnderline,
+} from "@/components/decorations";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 
-function extractFolderId(input: string): string | null {
-  const trimmed = input.trim();
+/**
+ * Extract Google Drive folder ID from various URL formats
+ * Supports:
+ * - https://drive.google.com/drive/u/4/folders/1QvBCmxEWaJAzY0oxmaXkvTQFmxenQ2Y6
+ * - https://drive.google.com/drive/folders/1QvBCmxEWaJAzY0oxmaXkvTQFmxenQ2Y6?usp=sharing
+ * - Direct ID: 1QvBCmxEWaJAzY0oxmaXkvTQFmxenQ2Y6
+ */
+function extractDriveFolderId(input: string): string | null {
+  const trimmedInput = input.trim();
 
-  // If it's already a folder ID (25+ alphanumeric characters)
-  if (/^[a-zA-Z0-9_-]{25,}$/.test(trimmed)) {
-    return trimmed;
+  // If it looks like a URL, try to extract the folder ID
+  if (trimmedInput.includes("drive.google.com")) {
+    // Match patterns like /folders/ID or /folders/ID?param=value
+    const match = trimmedInput.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
   }
 
-  // Extract from Google Drive URL
-  // https://drive.google.com/drive/folders/FOLDER_ID
-  // https://drive.google.com/drive/folders/FOLDER_ID?usp=sharing
-  const match = trimmed.match(/drive\.google\.com\/drive\/folders\/([a-zA-Z0-9_-]+)/);
-  if (match) {
-    return match[1];
+  // Otherwise, assume it's a direct ID
+  // Basic validation: Google Drive folder IDs are typically alphanumeric with - and _
+  if (/^[a-zA-Z0-9_-]+$/.test(trimmedInput)) {
+    return trimmedInput;
   }
 
   return null;
 }
 
-export default function Home() {
-  const [driveUrl, setDriveUrl] = useState("");
-  const [activityId, setActivityId] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+export default function HomePage() {
   const router = useRouter();
+  const [driveFolderId, setDriveFolderId] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleCreateEvent = async () => {
-    const folderId = extractFolderId(driveUrl);
-    if (!folderId) {
-      setError("請輸入有效的 Google Drive 資料夾連結");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    // Extract and validate Google Drive Folder ID
+    const extractedId = extractDriveFolderId(driveFolderId);
+    if (!extractedId) {
+      setError("請輸入有效的 Google Drive 資料夾 ID 或連結");
       return;
     }
 
-    setLoading(true);
-    setError("");
+    setIsCreating(true);
 
     try {
       const res = await fetch(`${API_URL}/events`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ driveFolderId: folderId }),
+        body: JSON.stringify({ driveFolderId: extractedId }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.message || "建立活動失敗");
-        return;
+        throw new Error(data.message || "建立活動失敗");
       }
 
       const data = await res.json();
-      const eventId = data.event.id;
-      router.push(`/event/${eventId}/display`);
-    } catch {
-      setError("網路錯誤，請稍後再試");
-    } finally {
-      setLoading(false);
+
+      // Navigate to the event page
+      router.push(`/event/${data.event.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "建立活動失敗");
+      setIsCreating(false);
     }
   };
 
-  const handleJoinEvent = (mode: "participant" | "display") => {
-    if (!activityId.trim()) return;
-    const path =
-      mode === "display"
-        ? `/event/${activityId}/display`
-        : `/event/${activityId}`;
-    router.push(path);
-  };
-
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-zinc-900 p-4">
-      <h1 className="text-3xl font-bold text-white">Memento</h1>
+    <div className="min-h-screen pt-16 lg:pt-0 flex items-center justify-center p-4 bg-background relative overflow-hidden">
+      {/* Logo in top-left corner */}
+      <Logo />
 
-      {/* 建立活動 */}
-      <section className="w-full max-w-md space-y-3">
-        <h2 className="text-lg font-medium text-white">建立活動</h2>
-        <input
-          type="text"
-          value={driveUrl}
-          onChange={(e) => setDriveUrl(e.target.value)}
-          placeholder="貼上 Google Drive 資料夾連結"
-          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-white placeholder:text-zinc-500 focus:border-blue-500 focus:outline-none"
-        />
-        <button
-          onClick={handleCreateEvent}
-          disabled={!driveUrl.trim() || loading}
-          className="w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading ? "建立中..." : "建立活動並開啟顯示螢幕"}
-        </button>
-        {error && <p className="text-sm text-red-400">{error}</p>}
-      </section>
+      {/* Decorative Background */}
+      <GeometricBackground variant="default" />
 
-      <div className="flex items-center gap-4 text-zinc-500">
-        <div className="h-px w-16 bg-zinc-700" />
-        <span>或</span>
-        <div className="h-px w-16 bg-zinc-700" />
-      </div>
+      <div className="max-w-4xl w-full relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        {/* Left Column: Hero Text */}
+        <div className="text-left animate-pop-in">
+          {/* Pill Badge */}
+          <div className="pill-badge bg-tertiary text-foreground mb-6">
+            <span>分享美好時光</span>
+          </div>
 
-      {/* 加入活動 */}
-      <section className="w-full max-w-md space-y-3">
-        <h2 className="text-lg font-medium text-white">加入活動</h2>
-        <input
-          type="text"
-          value={activityId}
-          onChange={(e) => setActivityId(e.target.value)}
-          placeholder="輸入活動 ID"
-          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-white placeholder:text-zinc-500 focus:border-blue-500 focus:outline-none"
-        />
-        <div className="flex gap-3">
-          <button
-            onClick={() => handleJoinEvent("participant")}
-            disabled={!activityId.trim()}
-            className="flex-1 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            參與活動
-          </button>
-          <button
-            onClick={() => handleJoinEvent("display")}
-            disabled={!activityId.trim()}
-            className="flex-1 rounded-lg bg-zinc-700 px-6 py-3 font-medium text-white transition hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            顯示螢幕
-          </button>
+          <h2 className="text-6xl lg:text-7xl font-heading font-bold text-text-main mb-2 tracking-tight leading-tight">
+            Memento
+          </h2>
+          <div className="w-48 mb-6">
+            <SquiggleUnderline color="#F472B6" />
+          </div>
+
+          <p className="text-lg text-text-muted font-body mb-8 leading-relaxed max-w-md">
+            將 Google Drive 變成你的專屬照片牆，讓每一刻精彩瞬間即時分享
+          </p>
+
+          <div className="flex flex-wrap gap-4 text-sm text-text-muted">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-accent rounded-full border-2 border-foreground"></div>
+              <span className="font-bold">即時同步</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-secondary rounded-full border-2 border-foreground"></div>
+              <span className="font-bold">簡單分享</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-tertiary rounded-full border-2 border-foreground"></div>
+              <span className="font-bold">無限照片</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-quaternary rounded-full border-2 border-foreground"></div>
+              <span className="font-bold">無需登入</span>
+            </div>
+          </div>
         </div>
-      </section>
-    </main>
+
+        {/* Right Column: Interactive Card */}
+        <div
+          className="relative animate-pop-in"
+          style={{ animationDelay: "0.15s" }}
+        >
+          <div className="card-sticker p-8 relative z-20 bg-white">
+            {/* Create Event Form */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label
+                  htmlFor="driveFolderId"
+                  className="flex items-center gap-2 text-sm font-bold text-text-main mb-2 font-heading"
+                >
+                  <FolderOpen className="w-4 h-4 text-accent" />
+                  Google Drive 連結 <span className="text-secondary">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="driveFolderId"
+                  value={driveFolderId}
+                  onChange={(e) => setDriveFolderId(e.target.value)}
+                  required
+                  placeholder="貼上連結或資料夾 ID"
+                  className="input-playful font-mono text-sm"
+                />
+                <p className="text-xs text-text-muted mt-2">
+                  活動名稱將使用此資料夾的名稱
+                </p>
+                <details open className="mt-3 group">
+                  <summary className="text-xs text-accent hover:text-primary-hover cursor-pointer font-bold list-none flex items-center gap-1.5 w-fit">
+                    <span className="group-open:rotate-90 transition-transform">
+                      ▶
+                    </span>{" "}
+                    如何取得資料夾 ID？
+                  </summary>
+                  <div className="mt-2 p-4 bg-muted rounded-xl text-xs text-text-muted border-2 border-border">
+                    <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
+                      <li>建立 Google Drive 資料夾，並設定資料夾名稱</li>
+                      <li>右鍵點擊 → 選擇「共用」</li>
+                      <li>
+                        設定為知道連結的人都能編輯，或是僅允許
+                        oddlabcc@gmail.com 編輯
+                      </li>
+                      <li>複製連結或網址末端的 ID</li>
+                    </ol>
+                  </div>
+                </details>
+              </div>
+
+              {error && (
+                <div className="p-4 bg-red-50 border-2 border-red-400 rounded-xl animate-wiggle">
+                  <p className="text-sm text-red-600 text-center font-bold">
+                    {error}
+                  </p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isCreating}
+                className="w-full btn-candy flex items-center justify-center gap-2"
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>建立中...</span>
+                  </>
+                ) : (
+                  <span>建立新活動</span>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

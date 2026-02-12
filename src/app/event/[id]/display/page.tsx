@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "next/navigation";
 import type DanmakuType from "danmaku";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8787";
 
@@ -178,8 +178,8 @@ export default function DisplayPage() {
         </div>
       )}
 
-      {/* Photo Counter */}
-      {photos.length > 0 && (
+      {/* Photo Counter (dev only) */}
+      {process.env.NODE_ENV !== "production" && photos.length > 0 && (
         <div className="absolute bottom-4 right-4 rounded-lg bg-black/50 px-3 py-1 text-white">
           {currentIndex + 1} / {photos.length}
         </div>
@@ -187,14 +187,10 @@ export default function DisplayPage() {
 
       {/* Connection Status */}
       <div
-        className={`absolute left-4 top-4 rounded-full px-3 py-1 text-sm ${
-          connected
-            ? "bg-green-900/50 text-green-400"
-            : "bg-yellow-900/50 text-yellow-400"
+        className={`absolute left-4 bottom-4 rounded-full size-1.5 ${
+          connected ? "bg-green-700" : "bg-yellow-700"
         }`}
-      >
-        {connected ? "已連線" : "連線中..."}
-      </div>
+      ></div>
     </div>
   );
 }
