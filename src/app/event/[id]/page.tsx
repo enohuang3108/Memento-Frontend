@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { GeometricBackground } from "@/components/decorations";
@@ -252,6 +253,26 @@ export default function EventPage() {
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Message Board Entry */}
+        {event.status === "active" && (
+          <div
+            className="mb-6 animate-pop-in"
+            style={{ animationDelay: "0.3s" }}
+          >
+            <div className="card-sticker p-6 text-center">
+              <p className="text-sm text-text-muted mb-4">
+                想要在照片上加上留言和裝飾嗎？
+              </p>
+              <Link
+                href={`/event/${activityId}/message-board`}
+                className="btn-candy-pink w-full flex items-center justify-center gap-2"
+              >
+                <span>🎨</span> 製作留言板
+              </Link>
+            </div>
           </div>
         )}
       </div>
