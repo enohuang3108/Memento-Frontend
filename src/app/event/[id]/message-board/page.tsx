@@ -16,7 +16,6 @@ import {
   CompletionView,
   IllustrationPicker,
 } from "@/components/MessageBoard";
-import { composeMessageBoard } from "@/lib/canvasComposer";
 import type { Illustration } from "@/lib/illustrations";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
@@ -53,6 +52,9 @@ export default function MessageBoardPage() {
   const [message, setMessage] = useState("");
   const [relation, setRelation] = useState("");
   const [locationTime, setLocationTime] = useState("");
+
+  // Illustrations state (lifted from PolaroidEditor)
+  const [illustrations, setIllustrations] = useState<Illustration[]>([]);
 
   // Composed result
   const [composedBlob, setComposedBlob] = useState<Blob | null>(null);
@@ -100,6 +102,10 @@ export default function MessageBoardPage() {
       router.push(`/event/${activityId}`);
     } else if (step === "edit") {
       setPhoto(null);
+      setIllustrations([]);
+      setMessage("");
+      setRelation("");
+      setLocationTime("");
       setStep("select-photo");
     } else if (step === "complete") {
       setComposedBlob(null);
@@ -117,33 +123,26 @@ export default function MessageBoardPage() {
     setError(errorMessage);
   }, []);
 
-  const handleComplete = useCallback(
-    async (illustrations: Illustration[]) => {
-      if (!photo) return;
+  const handleComplete = useCallback(async (blob: Blob) => {
+    setIsComposing(true);
+    setError(null);
 
-      setIsComposing(true);
-      setError(null);
+    try {
+      setComposedBlob(blob);
+      setStep("complete");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "合成照片失敗";
+      setError(errorMessage);
+    } finally {
+      setIsComposing(false);
+    }
+  }, []);
 
-      try {
-        const result = await composeMessageBoard({
-          photo,
-          message,
-          relation,
-          locationTime,
-          illustrations,
-        });
-        setComposedBlob(result.blob);
-        setStep("complete");
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "合成照片失敗";
-        setError(errorMessage);
-      } finally {
-        setIsComposing(false);
-      }
-    },
-    [photo, message, relation, locationTime],
-  );
+  const handleBackToEdit = useCallback(() => {
+    setComposedBlob(null);
+    setStep("edit");
+  }, []);
 
   const handleUploadSuccess = useCallback(() => {
     // Navigate back to event page after successful upload
@@ -249,9 +248,11 @@ export default function MessageBoardPage() {
               message={message}
               relation={relation}
               locationTime={locationTime}
+              illustrations={illustrations}
               onMessageChange={setMessage}
               onRelationChange={setRelation}
               onLocationTimeChange={setLocationTime}
+              onIllustrationsChange={setIllustrations}
               onComplete={handleComplete}
               isComposing={isComposing}
               onOpenPicker={() => setIsPickerOpen(true)}
@@ -268,6 +269,7 @@ export default function MessageBoardPage() {
               sessionId={sessionId}
               onUploadSuccess={handleUploadSuccess}
               onUploadError={handleUploadError}
+              onBackToEdit={handleBackToEdit}
               onClose={handleClose}
             />
           )}
