@@ -5,10 +5,18 @@
  * Allows user to choose between camera capture or photo library
  */
 
-import { useRef, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
+import { convertHeicToPng, isHeicFile } from "@/lib/heicConverter";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
 
 interface PhotoSourcePickerProps {
   onSelect: (file: File) => void;
@@ -16,7 +24,8 @@ interface PhotoSourcePickerProps {
 }
 
 function validatePhotoFile(file: File): { valid: boolean; error?: string } {
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  const isAllowedType = ALLOWED_TYPES.includes(file.type) || isHeicFile(file);
+  if (!isAllowedType) {
     return { valid: false, error: "不支援的檔案格式" };
   }
   if (file.size > MAX_FILE_SIZE) {
@@ -31,24 +40,48 @@ export function PhotoSourcePicker({
 }: PhotoSourcePickerProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const libraryInputRef = useRef<HTMLInputElement>(null);
+  const [isConverting, setIsConverting] = useState(false);
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const originalFile = e.target.files?.[0];
+    if (!originalFile) return;
 
-    const validation = validatePhotoFile(file);
+    const validation = validatePhotoFile(originalFile);
     if (!validation.valid) {
       onError(validation.error || "檔案驗證失敗");
       return;
     }
 
-    onSelect(file);
+    try {
+      setIsConverting(true);
+      const file = await convertHeicToPng(originalFile);
+      onSelect(file);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "處理失敗";
+      onError(message);
+    } finally {
+      setIsConverting(false);
+    }
 
     // Reset input
     if (e.target) {
       e.target.value = "";
     }
   };
+
+  if (isConverting) {
+    return (
+      <div className="text-center">
+        <div className="text-6xl mb-6 animate-pulse">🔄</div>
+        <h2 className="text-xl font-heading font-bold text-text-main mb-6">
+          正在處理照片...
+        </h2>
+        <p className="text-sm text-text-muted">
+          HEIC 照片需要轉換格式，請稍候
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="text-center">
@@ -93,7 +126,7 @@ export function PhotoSourcePicker({
       </div>
 
       <p className="mt-6 text-sm text-text-muted">
-        支援 JPEG, PNG, GIF, WebP（最大 20MB）
+        支援 JPEG, PNG, GIF, WebP, HEIC（最大 20MB）
       </p>
     </div>
   );

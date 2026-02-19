@@ -7,11 +7,19 @@
  */
 
 import { useRef, useState, type ChangeEvent } from "react";
+import { convertHeicToPng, isHeicFile } from "@/lib/heicConverter";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 const MAX_PHOTOS = 50;
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
 
 interface PhotoFile {
   file: File;
@@ -40,7 +48,9 @@ interface PhotoUploadProps {
 }
 
 function validatePhotoFile(file: File): { valid: boolean; error?: string } {
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  // Check MIME type or file extension for HEIC/HEIF (some browsers don't set correct MIME)
+  const isAllowedType = ALLOWED_TYPES.includes(file.type) || isHeicFile(file);
+  if (!isAllowedType) {
     return { valid: false, error: "不支援的檔案格式" };
   }
   if (file.size > MAX_FILE_SIZE) {
@@ -63,7 +73,9 @@ export function PhotoUpload({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+  const [isConverting, setIsConverting] = useState(false);
+
+  const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
@@ -73,41 +85,48 @@ export function PhotoUpload({
       return;
     }
 
+    setIsConverting(true);
+    setError(null);
+
     const validFiles: PhotoFile[] = [];
     const errors: string[] = [];
 
-    files.forEach((file, index) => {
+    // Process files sequentially to handle async HEIC conversion
+    for (let index = 0; index < files.length; index++) {
+      const originalFile = files[index];
+
       // Validate file
-      const validation = validatePhotoFile(file);
+      const validation = validatePhotoFile(originalFile);
       if (!validation.valid) {
-        errors.push(`${file.name}: ${validation.error}`);
-        return;
+        errors.push(`${originalFile.name}: ${validation.error}`);
+        continue;
       }
 
-      // Create preview
-      const reader = new FileReader();
-      const id = `${Date.now()}-${index}`;
+      try {
+        // Convert HEIC/HEIF to PNG if needed
+        const file = await convertHeicToPng(originalFile);
 
-      reader.onload = () => {
-        validFiles.push({
-          file,
-          previewUrl: reader.result as string,
-          id,
+        // Create preview
+        const previewUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
         });
 
-        // Update state when all files are processed
-        if (validFiles.length + errors.length === files.length) {
-          setSelectedFiles((prev) => [...prev, ...validFiles]);
-          if (errors.length > 0) {
-            setError(errors.join("\n"));
-          } else {
-            setError(null);
-          }
-        }
-      };
+        const id = `${Date.now()}-${index}`;
+        validFiles.push({ file, previewUrl, id });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "處理失敗";
+        errors.push(`${originalFile.name}: ${message}`);
+      }
+    }
 
-      reader.readAsDataURL(file);
-    });
+    setIsConverting(false);
+    setSelectedFiles((prev) => [...prev, ...validFiles]);
+
+    if (errors.length > 0) {
+      setError(errors.join("\n"));
+    }
 
     // Reset file input
     if (fileInputRef.current) {
@@ -271,34 +290,46 @@ export function PhotoUpload({
         {selectedFiles.length === 0 ? (
           /* File Selector */
           <div>
-            <label
-              htmlFor="photo-upload"
-              className="flex flex-col items-center justify-center w-full h-64 border-3 border-dashed border-accent/50 rounded-2xl cursor-pointer hover:border-accent hover:bg-accent/5 transition-all group"
-            >
-              <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-                <div className="text-6xl mb-4 group-hover:animate-bounce-slight">
-                  📸
-                </div>
-                <p className="mb-2 text-sm text-text-main font-heading font-bold">
-                  點擊選擇照片
+            {isConverting ? (
+              <div className="flex flex-col items-center justify-center w-full h-64 border-3 border-dashed border-accent/50 rounded-2xl">
+                <div className="text-6xl mb-4 animate-pulse">🔄</div>
+                <p className="text-sm text-text-main font-heading font-bold">
+                  正在處理照片...
                 </p>
-                <p className="text-xs text-text-muted">
-                  JPEG, PNG, GIF, WebP (最大 20MB)
-                </p>
-                <p className="text-xs text-text-muted mt-1">
-                  一次最多可選擇 {MAX_PHOTOS} 張照片
+                <p className="text-xs text-text-muted mt-2">
+                  HEIC 照片需要轉換格式，請稍候
                 </p>
               </div>
-              <input
-                ref={fileInputRef}
-                id="photo-upload"
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleFileSelect}
-              />
-            </label>
+            ) : (
+              <label
+                htmlFor="photo-upload"
+                className="flex flex-col items-center justify-center w-full h-64 border-3 border-dashed border-accent/50 rounded-2xl cursor-pointer hover:border-accent hover:bg-accent/5 transition-all group"
+              >
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                  <div className="text-6xl mb-4 group-hover:animate-bounce-slight">
+                    📸
+                  </div>
+                  <p className="mb-2 text-sm text-text-main font-heading font-bold">
+                    點擊選擇照片
+                  </p>
+                  <p className="text-xs text-text-muted">
+                    JPEG, PNG, GIF, WebP, HEIC (最大 20MB)
+                  </p>
+                  <p className="text-xs text-text-muted mt-1">
+                    一次最多可選擇 {MAX_PHOTOS} 張照片
+                  </p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  id="photo-upload"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+              </label>
+            )}
 
             {error && (
               <div className="mt-4 p-3 bg-red-50 border-2 border-red-400 rounded-xl">

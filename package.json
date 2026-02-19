@@ -11,6 +11,7 @@
     "@ducanh2912/next-pwa": "^10.2.9",
     "canvas-confetti": "^1.9.4",
     "danmaku": "^2.0.9",
+    "heic-to": "^1.4.2",
     "interactjs": "^1.10.27",
     "lucide-react": "^0.563.0",
     "modern-screenshot": "^4.6.8",
