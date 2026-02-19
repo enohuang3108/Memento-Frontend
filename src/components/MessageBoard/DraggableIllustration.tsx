@@ -98,7 +98,13 @@ export function DraggableIllustration({
       })
       .gesturable({
         listeners: {
+          start(event) {
+            // Prevent browser zoom when pinch gesture starts on illustration
+            event.preventDefault();
+          },
           move(event) {
+            // Prevent browser zoom during pinch gesture
+            event.preventDefault();
             const ill = illustrationRef.current;
             onUpdateRef.current({
               scale: Math.max(0.3, Math.min(3, ill.scale * (1 + event.ds))),

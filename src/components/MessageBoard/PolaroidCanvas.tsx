@@ -7,6 +7,7 @@
 
 import type { Illustration } from "@/lib/illustrations";
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
+import interact from "interactjs";
 import { DraggableIllustration } from "./DraggableIllustration";
 
 interface PolaroidCanvasProps {
@@ -93,6 +94,57 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
       onSelectIllustration(null);
     }, [onSelectIllustration]);
 
+    // Use refs to access latest values in interact.js callbacks
+    const selectedIdRef = useRef(selectedId);
+    const illustrationsRef = useRef(illustrations);
+    const onUpdateIllustrationRef = useRef(onUpdateIllustration);
+
+    useEffect(() => {
+      selectedIdRef.current = selectedId;
+      illustrationsRef.current = illustrations;
+      onUpdateIllustrationRef.current = onUpdateIllustration;
+    });
+
+    // Setup pinch-to-zoom on photo area for selected illustration
+    useEffect(() => {
+      const photoArea = photoAreaRef.current;
+      if (!photoArea) return;
+
+      const interactable = interact(photoArea).gesturable({
+        listeners: {
+          start(event) {
+            // Only prevent default if we have a selected illustration
+            if (selectedIdRef.current) {
+              event.preventDefault();
+            }
+          },
+          move(event) {
+            const currentSelectedId = selectedIdRef.current;
+            if (!currentSelectedId) return;
+
+            // Prevent browser zoom
+            event.preventDefault();
+
+            // Find the selected illustration
+            const selectedIllust = illustrationsRef.current.find(
+              (ill) => ill.id === currentSelectedId
+            );
+            if (!selectedIllust) return;
+
+            // Update scale and rotation
+            onUpdateIllustrationRef.current(currentSelectedId, {
+              scale: Math.max(0.3, Math.min(3, selectedIllust.scale * (1 + event.ds))),
+              rotation: selectedIllust.rotation + event.da,
+            });
+          },
+        },
+      });
+
+      return () => {
+        interactable.unset();
+      };
+    }, []);
+
     return (
       <div
         ref={ref}
@@ -106,7 +158,7 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
         {/* Photo Area */}
         <div
           ref={photoAreaRef}
-          className="relative overflow-hidden w-full"
+          className={`relative overflow-hidden w-full ${selectedId ? "touch-none" : ""}`}
           style={{ aspectRatio: photoAspectRatio }}
         >
           {photoUrl && (
