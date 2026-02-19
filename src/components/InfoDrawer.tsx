@@ -8,7 +8,15 @@
  */
 
 import { useRouter } from "next/navigation";
-import { Camera, Check, Copy, QrCode, Users, Wifi, WifiOff } from "lucide-react";
+import {
+  Camera,
+  Check,
+  Copy,
+  QrCode,
+  Users,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
 import type { TouchEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DotPatternSubtle } from "./decorations";
@@ -76,7 +84,7 @@ export function InfoDrawer({
       if (!isDragging) return;
       setCurrentY(e.touches[0].clientY);
     },
-    [isDragging]
+    [isDragging],
   );
 
   // Handle touch end
@@ -233,7 +241,7 @@ export function InfoDrawer({
               </p>
             </div>
             <div
-              className="inline-block p-4 bg-white rounded-2xl border-2 border-foreground cursor-pointer select-none"
+              className="inline-block p-4 bg-white rounded-2xl border-2 border-foreground select-none"
               style={{ boxShadow: "4px 4px 0px 0px #8B5CF6" }}
               onClick={handleQRCodeClick}
             >

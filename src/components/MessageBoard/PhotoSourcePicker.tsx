@@ -76,9 +76,7 @@ export function PhotoSourcePicker({
         <h2 className="text-xl font-heading font-bold text-text-main mb-6">
           正在處理照片...
         </h2>
-        <p className="text-sm text-text-muted">
-          HEIC 照片需要轉換格式，請稍候
-        </p>
+        <p className="text-sm text-text-muted">HEIC 照片需要轉換格式，請稍候</p>
       </div>
     );
   }
@@ -96,7 +94,6 @@ export function PhotoSourcePicker({
           onClick={() => cameraInputRef.current?.click()}
           className="btn-candy-pink w-full flex items-center justify-center gap-3"
         >
-          <span className="text-xl">📷</span>
           <span>拍照</span>
         </button>
         <input
@@ -113,7 +110,6 @@ export function PhotoSourcePicker({
           onClick={() => libraryInputRef.current?.click()}
           className="btn-candy-yellow w-full flex items-center justify-center gap-3"
         >
-          <span className="text-xl">🖼️</span>
           <span>從相簿選擇</span>
         </button>
         <input

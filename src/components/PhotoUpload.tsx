@@ -270,7 +270,7 @@ export function PhotoUpload({
   };
 
   const uploadedCount = Array.from(uploadStatuses.values()).filter(
-    (s) => s.status === "success"
+    (s) => s.status === "success",
   ).length;
 
   return (
@@ -278,7 +278,7 @@ export function PhotoUpload({
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-heading font-bold text-text-main flex items-center gap-2">
-            <span className="text-2xl">📷</span> 上傳照片
+            上傳照片
           </h2>
           {selectedFiles.length > 0 && (
             <span className="text-sm font-bold text-text-muted bg-muted px-3 py-1 rounded-full border-2 border-border">

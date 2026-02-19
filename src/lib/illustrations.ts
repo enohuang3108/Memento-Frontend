@@ -28,6 +28,10 @@ export const COLOR_PALETTE = [
 export const DEFAULT_COLOR: string = COLOR_PALETTE[0];
 
 export const ILLUSTRATION_LIST = [
+  { id: "arrow-1", src: "/assets/illustrations/arrow-1.svg", name: "箭頭 1" },
+  { id: "arrow-40", src: "/assets/illustrations/arrow-40.svg", name: "箭頭 3" },
+  { id: "arrow-8", src: "/assets/illustrations/arrow-8.svg", name: "箭頭 2" },
+  { id: "arrow-2", src: "/assets/illustrations/arrow-2.svg", name: "箭頭 3" },
   { id: "flower", src: "/assets/illustrations/flower.svg", name: "花朵" },
   { id: "1", src: "/assets/illustrations/1.svg", name: "圖案 1" },
   { id: "2", src: "/assets/illustrations/2.svg", name: "圖案 2" },
@@ -35,10 +39,6 @@ export const ILLUSTRATION_LIST = [
   { id: "4", src: "/assets/illustrations/4.svg", name: "圖案 4" },
   { id: "5", src: "/assets/illustrations/5.svg", name: "圖案 5" },
   { id: "6", src: "/assets/illustrations/6.svg", name: "圖案 6" },
-  { id: "arrow-1", src: "/assets/illustrations/arrow-1.svg", name: "箭頭 1" },
-  { id: "arrow-8", src: "/assets/illustrations/arrow-8.svg", name: "箭頭 2" },
-  { id: "arrow-40", src: "/assets/illustrations/arrow-40.svg", name: "箭頭 3" },
-  { id: "doodle-1", src: "/assets/illustrations/doodle_1.svg", name: "塗鴉 1" },
   {
     id: "doodle-142",
     src: "/assets/illustrations/doodle_142.svg",
@@ -63,6 +63,26 @@ export const ILLUSTRATION_LIST = [
     id: "underline",
     src: "/assets/illustrations/underline_25.svg",
     name: "底線",
+  },
+  {
+    id: "doodle-349",
+    src: "/assets/illustrations/doodle_349.svg",
+    name: "塗鴉 6",
+  },
+  {
+    id: "doodle-233",
+    src: "/assets/illustrations/doodle_233.svg",
+    name: "塗鴉 7",
+  },
+  {
+    id: "doodle-249",
+    src: "/assets/illustrations/doodle_249.svg",
+    name: "塗鴉 8",
+  },
+  {
+    id: "doodle-276",
+    src: "/assets/illustrations/doodle_276.svg",
+    name: "塗鴉 9",
   },
 ] as const;
 
