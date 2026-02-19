@@ -5,22 +5,25 @@
  * Main editor combining canvas, illustration picker, and message form
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { PolaroidCanvas } from "./PolaroidCanvas";
 import { AddIllustrationButton } from "./IllustrationPicker";
 import { MessageForm } from "./MessageForm";
 import { createIllustration, type Illustration } from "@/lib/illustrations";
+import { captureCanvas } from "@/lib/captureCanvas";
 
 interface PolaroidEditorProps {
   photo: File;
   message: string;
   relation: string;
   locationTime: string;
+  illustrations: Illustration[];
   onMessageChange: (value: string) => void;
   onRelationChange: (value: string) => void;
   onLocationTimeChange: (value: string) => void;
-  onComplete: (illustrations: Illustration[]) => void;
+  onIllustrationsChange: (illustrations: Illustration[]) => void;
+  onComplete: (blob: Blob) => void;
   isComposing: boolean;
   onOpenPicker: () => void;
   pendingIllustration: { src: string; color: string } | null;
@@ -32,16 +35,18 @@ export function PolaroidEditor({
   message,
   relation,
   locationTime,
+  illustrations,
   onMessageChange,
   onRelationChange,
   onLocationTimeChange,
+  onIllustrationsChange,
   onComplete,
   isComposing,
   onOpenPicker,
   pendingIllustration,
   onIllustrationAdded,
 }: PolaroidEditorProps) {
-  const [illustrations, setIllustrations] = useState<Illustration[]>([]);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Process pending illustration when it arrives from external picker
@@ -51,36 +56,53 @@ export function PolaroidEditor({
         pendingIllustration.src,
         pendingIllustration.color,
       );
-      setIllustrations((prev) => [...prev, newIllust]);
+      onIllustrationsChange([...illustrations, newIllust]);
       setSelectedId(newIllust.id);
       onIllustrationAdded();
     }
-  }, [pendingIllustration, onIllustrationAdded]);
+  }, [pendingIllustration, onIllustrationAdded, illustrations, onIllustrationsChange]);
 
   const handleUpdateIllustration = useCallback(
     (id: string, updates: Partial<Illustration>) => {
-      setIllustrations((prev) =>
-        prev.map((illust) =>
+      onIllustrationsChange(
+        illustrations.map((illust) =>
           illust.id === id ? { ...illust, ...updates } : illust,
         ),
       );
     },
-    [],
+    [illustrations, onIllustrationsChange],
   );
 
-  const handleDeleteIllustration = useCallback((id: string) => {
-    setIllustrations((prev) => prev.filter((illust) => illust.id !== id));
-    setSelectedId(null);
-  }, []);
+  const handleDeleteIllustration = useCallback(
+    (id: string) => {
+      onIllustrationsChange(illustrations.filter((illust) => illust.id !== id));
+      setSelectedId(null);
+    },
+    [illustrations, onIllustrationsChange],
+  );
 
-  const handleComplete = useCallback(() => {
-    onComplete(illustrations);
-  }, [illustrations, onComplete]);
+  const handleComplete = useCallback(async () => {
+    if (!canvasRef.current) return;
+
+    // 取消選取狀態以隱藏選取框
+    setSelectedId(null);
+
+    // 等待一個 frame 讓 UI 更新
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    try {
+      const blob = await captureCanvas(canvasRef.current);
+      onComplete(blob);
+    } catch (error) {
+      console.error("截圖失敗:", error);
+    }
+  }, [onComplete]);
 
   return (
     <div className="space-y-6">
       {/* Canvas Preview */}
       <PolaroidCanvas
+        ref={canvasRef}
         photo={photo}
         message={message}
         relation={relation}
