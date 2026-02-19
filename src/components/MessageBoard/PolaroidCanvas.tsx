@@ -37,12 +37,12 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
     },
     ref,
   ) {
-    const photoAreaRef = useRef<HTMLDivElement>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
     const [photoAspectRatio, setPhotoAspectRatio] = useState<number>(4 / 3);
-    const [photoAreaSize, setPhotoAreaSize] = useState({
+    const [cardSize, setCardSize] = useState({
       width: 300,
-      height: 300,
+      height: 400,
     });
 
     // Load photo and get dimensions
@@ -59,23 +59,23 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
       return () => URL.revokeObjectURL(url);
     }, [photo]);
 
-    // Track photo area size
+    // Track card size for illustrations positioning
     useEffect(() => {
-      const photoArea = photoAreaRef.current;
-      if (!photoArea) return;
+      const card = cardRef.current;
+      if (!card) return;
 
       const observer = new ResizeObserver((entries) => {
         const { width, height } = entries[0].contentRect;
-        setPhotoAreaSize({ width, height });
+        setCardSize({ width, height });
       });
 
-      observer.observe(photoArea);
+      observer.observe(card);
       return () => observer.disconnect();
     }, []);
 
     // Calculate responsive font sizes based on text length and container width
     const getMessageFontSize = (text: string) => {
-      const containerWidth = photoAreaSize.width;
+      const containerWidth = cardSize.width;
       const len = text.length;
       const baseSize = Math.min(48, containerWidth * 0.3);
       const fitWidthSize = (containerWidth * 0.9) / (len * 0.6);
@@ -83,7 +83,7 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
     };
 
     const getSmallFontSize = (text: string) => {
-      const containerWidth = photoAreaSize.width;
+      const containerWidth = cardSize.width;
       const len = text.length;
       const baseSize = Math.min(18, containerWidth * 0.045);
       const fitWidthSize = (containerWidth * 0.5) / (len * 0.6);
@@ -105,12 +105,12 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
       onUpdateIllustrationRef.current = onUpdateIllustration;
     });
 
-    // Setup pinch-to-zoom on photo area for selected illustration
+    // Setup pinch-to-zoom on card for selected illustration
     useEffect(() => {
-      const photoArea = photoAreaRef.current;
-      if (!photoArea) return;
+      const card = cardRef.current;
+      if (!card) return;
 
-      const interactable = interact(photoArea).gesturable({
+      const interactable = interact(card).gesturable({
         listeners: {
           start(event) {
             // Only prevent default if we have a selected illustration
@@ -145,11 +145,24 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
       };
     }, []);
 
+    // Merge refs (forwardRef + internal cardRef)
+    const setRefs = useCallback(
+      (node: HTMLDivElement | null) => {
+        (cardRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        if (typeof ref === "function") {
+          ref(node);
+        } else if (ref) {
+          (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        }
+      },
+      [ref],
+    );
+
     return (
       <div
-        ref={ref}
+        ref={setRefs}
         onClick={handleBackgroundClick}
-        className="bg-white rounded-md overflow-hidden flex flex-col"
+        className={`relative bg-white rounded-md overflow-hidden flex flex-col ${selectedId ? "touch-none" : ""}`}
         style={{
           padding: "26px 20px 16px 20px",
           boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
@@ -157,8 +170,7 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
       >
         {/* Photo Area */}
         <div
-          ref={photoAreaRef}
-          className={`relative overflow-hidden w-full ${selectedId ? "touch-none" : ""}`}
+          className="relative overflow-hidden w-full"
           style={{ aspectRatio: photoAspectRatio }}
         >
           {photoUrl && (
@@ -169,21 +181,6 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
               draggable={false}
             />
           )}
-
-          {/* Illustrations Layer */}
-          <div className="absolute inset-0" style={{ pointerEvents: "none" }}>
-            {illustrations.map((illust) => (
-              <DraggableIllustration
-                key={illust.id}
-                illustration={illust}
-                isSelected={selectedId === illust.id}
-                containerSize={photoAreaSize}
-                onSelect={() => onSelectIllustration(illust.id)}
-                onUpdate={(updates) => onUpdateIllustration(illust.id, updates)}
-                onDelete={() => onDeleteIllustration(illust.id)}
-              />
-            ))}
-          </div>
         </div>
 
         {/* Text Area - auto height */}
@@ -223,6 +220,21 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
               </p>
             )}
           </div>
+        </div>
+
+        {/* Illustrations Layer - covers entire card */}
+        <div className="absolute inset-0" style={{ pointerEvents: "none" }}>
+          {illustrations.map((illust) => (
+            <DraggableIllustration
+              key={illust.id}
+              illustration={illust}
+              isSelected={selectedId === illust.id}
+              containerSize={cardSize}
+              onSelect={() => onSelectIllustration(illust.id)}
+              onUpdate={(updates) => onUpdateIllustration(illust.id, updates)}
+              onDelete={() => onDeleteIllustration(illust.id)}
+            />
+          ))}
         </div>
       </div>
     );

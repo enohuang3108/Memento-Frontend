@@ -14,6 +14,7 @@ export interface Illustration {
 }
 
 export const COLOR_PALETTE = [
+  "#ef4444", // 紅
   "#f472b6", // 粉紅
   "#fb923c", // 橘
   "#facc15", // 黃
@@ -67,7 +68,7 @@ export const ILLUSTRATION_LIST = [
 
 export function createIllustration(
   src: string,
-  color: string = DEFAULT_COLOR
+  color: string = DEFAULT_COLOR,
 ): Illustration {
   return {
     id: `illust-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
