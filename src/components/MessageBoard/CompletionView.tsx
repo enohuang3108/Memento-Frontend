@@ -22,6 +22,7 @@ interface CompletionViewProps {
     height?: number;
   }) => void;
   onUploadError: (error: string) => void;
+  onBackToEdit: () => void;
   onClose: () => void;
 }
 
@@ -31,6 +32,7 @@ export function CompletionView({
   sessionId,
   onUploadSuccess,
   onUploadError,
+  onBackToEdit,
   onClose,
 }: CompletionViewProps) {
   const [isUploading, setIsUploading] = useState(false);
@@ -131,11 +133,11 @@ export function CompletionView({
           </button>
 
           <button
-            onClick={onClose}
+            onClick={onBackToEdit}
             disabled={isUploading}
             className="w-full px-6 py-3 bg-muted hover:bg-border text-text-main font-heading font-bold rounded-full transition-colors border-2 border-border"
           >
-            取消
+            返回編輯
           </button>
         </div>
       )}
