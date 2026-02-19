@@ -86,12 +86,19 @@ export function DraggableIllustration({
         listeners: {
           move(event) {
             const ill = illustrationRef.current;
-            const size = containerSizeRef.current;
-            const deltaX = (event.dx / size.width) * 100;
-            const deltaY = (event.dy / size.height) * 100;
+            const container = containerSizeRef.current;
+            const deltaX = (event.dx / container.width) * 100;
+            const deltaY = (event.dy / container.height) * 100;
+
+            // Calculate half size as percentage for boundary clamping
+            const illustSize = 80 * ill.scale;
+            const halfSizeX = (illustSize / 2 / container.width) * 100;
+            const halfSizeY = (illustSize / 2 / container.height) * 100;
+
+            // Allow illustration edges to reach container edges exactly (no margin)
             onUpdateRef.current({
-              x: Math.max(-20, Math.min(120, ill.x + deltaX)),
-              y: Math.max(-20, Math.min(120, ill.y + deltaY)),
+              x: Math.max(halfSizeX, Math.min(100, ill.x + deltaX)),
+              y: Math.max(halfSizeY, Math.min(100, ill.y + deltaY)),
             });
           },
         },

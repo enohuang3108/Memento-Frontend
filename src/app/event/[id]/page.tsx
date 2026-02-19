@@ -131,13 +131,13 @@ export default function EventPage() {
           JSON.stringify({
             type: "photo_added",
             ...photoData,
-          })
+          }),
         );
       }
       // Refetch to update photoCount
       fetchEvent();
     },
-    [fetchEvent]
+    [fetchEvent],
   );
 
   const handleDanmakuSend = useCallback((content: string) => {
@@ -146,7 +146,7 @@ export default function EventPage() {
         JSON.stringify({
           type: "danmaku",
           content,
-        })
+        }),
       );
     }
   }, []);
@@ -194,7 +194,7 @@ export default function EventPage() {
       ? `${window.location.origin}/event/${activityId}`
       : "";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-    participantUrl
+    participantUrl,
   )}`;
 
   return (
@@ -264,13 +264,13 @@ export default function EventPage() {
           >
             <div className="card-sticker p-6 text-center">
               <p className="text-sm text-text-muted mb-4">
-                想要在照片上加上留言和裝飾嗎？
+                想要在照片上加上留言嗎？
               </p>
               <Link
                 href={`/event/${activityId}/message-board`}
                 className="btn-candy-pink w-full flex items-center justify-center gap-2"
               >
-                <span>🎨</span> 製作留言板
+                製作留言板
               </Link>
             </div>
           </div>

@@ -52,7 +52,7 @@ export function IllustrationPicker({
           </button>
         </div>
         <h5 className="text-sm text-text-muted mb-4">
-          透過手指拖移、兩指旋轉可調整插畫位置與角度
+          透過手指拖移、兩指旋轉可調整位置與角度
         </h5>
 
         {/* Color Palette */}
@@ -94,7 +94,7 @@ export function AddIllustrationButton({ onClick }: { onClick: () => void }) {
       "
       style={{ boxShadow: "2px 2px 0px 0px #1e293b" }}
     >
-      添加裝飾
+      加點裝飾
     </button>
   );
 }

@@ -30,7 +30,7 @@ export function MessageForm({
           htmlFor="message"
           className="block text-sm font-heading font-bold text-text-muted mb-2"
         >
-         留言
+          留言
         </label>
         <textarea
           id="message"
@@ -60,7 +60,7 @@ export function MessageForm({
           value={relation}
           onChange={(e) => onRelationChange(e.target.value)}
           maxLength={20}
-          placeholder="例：大學同學、表姐..."
+          placeholder="住下鋪的大學室友..."
           className="input-playful"
         />
       </div>
@@ -79,7 +79,7 @@ export function MessageForm({
           value={locationTime}
           onChange={(e) => onLocationTimeChange(e.target.value)}
           maxLength={30}
-          placeholder="例：2026.02.13 台北"
+          placeholder="2026.03.08 彰化"
           className="input-playful"
         />
       </div>

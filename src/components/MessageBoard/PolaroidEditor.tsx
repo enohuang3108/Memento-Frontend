@@ -48,6 +48,7 @@ export function PolaroidEditor({
 }: PolaroidEditorProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
 
   // Process pending illustration when it arrives from external picker
   useEffect(() => {
@@ -84,6 +85,8 @@ export function PolaroidEditor({
   const handleComplete = useCallback(async () => {
     if (!canvasRef.current) return;
 
+    setIsCapturing(true);
+
     // 取消選取狀態以隱藏選取框
     setSelectedId(null);
 
@@ -95,6 +98,8 @@ export function PolaroidEditor({
       onComplete(blob);
     } catch (error) {
       console.error("截圖失敗:", error);
+    } finally {
+      setIsCapturing(false);
     }
   }, [onComplete]);
 
@@ -130,10 +135,10 @@ export function PolaroidEditor({
       {/* Complete Button */}
       <button
         onClick={handleComplete}
-        disabled={isComposing}
+        disabled={isComposing || isCapturing}
         className="btn-candy w-full flex items-center justify-center gap-2"
       >
-        {isComposing ? (
+        {isComposing || isCapturing ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" /> 處理中...
           </>

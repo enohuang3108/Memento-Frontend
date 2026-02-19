@@ -60,6 +60,8 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
     }, [photo]);
 
     // Track card size for illustrations positioning
+    // Use contentRect to get content-box size (excludes padding)
+    // Illustrations Layer is positioned to match content area
     useEffect(() => {
       const card = cardRef.current;
       if (!card) return;
@@ -127,13 +129,16 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
 
             // Find the selected illustration
             const selectedIllust = illustrationsRef.current.find(
-              (ill) => ill.id === currentSelectedId
+              (ill) => ill.id === currentSelectedId,
             );
             if (!selectedIllust) return;
 
             // Update scale and rotation
             onUpdateIllustrationRef.current(currentSelectedId, {
-              scale: Math.max(0.3, Math.min(3, selectedIllust.scale * (1 + event.ds))),
+              scale: Math.max(
+                0.3,
+                Math.min(3, selectedIllust.scale * (1 + event.ds)),
+              ),
               rotation: selectedIllust.rotation + event.da,
             });
           },
@@ -148,7 +153,8 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
     // Merge refs (forwardRef + internal cardRef)
     const setRefs = useCallback(
       (node: HTMLDivElement | null) => {
-        (cardRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        (cardRef as React.MutableRefObject<HTMLDivElement | null>).current =
+          node;
         if (typeof ref === "function") {
           ref(node);
         } else if (ref) {
@@ -162,7 +168,7 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
       <div
         ref={setRefs}
         onClick={handleBackgroundClick}
-        className={`relative bg-white rounded-md overflow-hidden flex flex-col ${selectedId ? "touch-none" : ""}`}
+        className={`relative bg-white overflow-hidden flex flex-col ${selectedId ? "touch-none" : ""}`}
         style={{
           padding: "26px 20px 16px 20px",
           boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
@@ -184,7 +190,9 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
         </div>
 
         {/* Text Area - auto height */}
-        <div className="pt-3 flex flex-col">
+        <div
+          style={{ marginTop: 12, display: "flex", flexDirection: "column" }}
+        >
           {/* Message */}
           {message && (
             <p
@@ -222,8 +230,17 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
           </div>
         </div>
 
-        {/* Illustrations Layer - covers entire card */}
-        <div className="absolute inset-0" style={{ pointerEvents: "none" }}>
+        {/* Illustrations Layer - aligned with content area (matches contentRect) */}
+        <div
+          className="absolute"
+          style={{
+            pointerEvents: "none",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
+        >
           {illustrations.map((illust) => (
             <DraggableIllustration
               key={illust.id}

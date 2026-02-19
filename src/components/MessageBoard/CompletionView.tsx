@@ -5,8 +5,8 @@
  * Shows the final result with download and upload buttons
  */
 
-import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 
@@ -38,6 +38,60 @@ export function CompletionView({
   const [isUploading, setIsUploading] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
   const [previewUrl] = useState(() => URL.createObjectURL(composedBlob));
+
+  // Trigger confetti when upload succeeds
+  useEffect(() => {
+    const runConfetti = async () => {
+      const confettiModule = await import("canvas-confetti");
+      const confetti = confettiModule.default;
+
+      var count = 200;
+      var defaults = {
+        origin: { y: 0.7 },
+      };
+
+      function fire(
+        particleRatio: number,
+        opts: {
+          spread: number;
+          startVelocity?: number;
+          decay?: number;
+          scalar?: number;
+        },
+      ) {
+        confetti({
+          ...defaults,
+          ...opts,
+          particleCount: Math.floor(count * particleRatio),
+        });
+      }
+
+      fire(0.25, {
+        spread: 26,
+        startVelocity: 55,
+      });
+      fire(0.2, {
+        spread: 60,
+      });
+      fire(0.35, {
+        spread: 100,
+        decay: 0.91,
+        scalar: 0.8,
+      });
+      fire(0.1, {
+        spread: 120,
+        startVelocity: 25,
+        decay: 0.92,
+        scalar: 1.2,
+      });
+      fire(0.1, {
+        spread: 120,
+        startVelocity: 45,
+      });
+    };
+
+    runConfetti();
+  }, [isUploaded]);
 
   const handleDownload = () => {
     const link = document.createElement("a");
@@ -85,11 +139,6 @@ export function CompletionView({
 
   return (
     <div className="text-center">
-      <div className="text-4xl mb-4">🎉</div>
-      <h2 className="text-xl font-heading font-bold text-text-main mb-6">
-        {isUploaded ? "上傳成功！" : "完成！"}
-      </h2>
-
       {/* Preview */}
       <div className="mb-6 shadow-lg">
         <img src={previewUrl} alt="成品預覽" className="w-full h-auto" />
