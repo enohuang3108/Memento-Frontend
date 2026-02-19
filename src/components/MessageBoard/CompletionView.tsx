@@ -57,7 +57,7 @@ export function CompletionView({
         "file",
         new File([composedBlob], `message-board-${Date.now()}.jpg`, {
           type: "image/jpeg",
-        })
+        }),
       );
       formData.append("activityId", activityId);
       formData.append("sessionId", sessionId);
@@ -91,7 +91,7 @@ export function CompletionView({
       </h2>
 
       {/* Preview */}
-      <div className="mb-6 rounded-xl overflow-hidden border-2 border-border">
+      <div className="mb-6 shadow-lg">
         <img src={previewUrl} alt="成品預覽" className="w-full h-auto" />
       </div>
 
@@ -108,9 +108,16 @@ export function CompletionView({
       ) : (
         <div className="space-y-4">
           <button
+            onClick={handleDownload}
+            disabled={isUploading}
+            className="btn-candy w-full"
+          >
+            下載照片
+          </button>
+          <button
             onClick={handleUpload}
             disabled={isUploading}
-            className="btn-candy w-full flex items-center justify-center gap-2"
+            className="btn-candy-yellow w-full flex items-center justify-center gap-2"
           >
             {isUploading ? (
               <>
@@ -118,18 +125,8 @@ export function CompletionView({
                 上傳中...
               </>
             ) : (
-              <>
-                <span>✅</span> 上傳到照片牆
-              </>
+              <>上傳到照片牆</>
             )}
-          </button>
-
-          <button
-            onClick={handleDownload}
-            disabled={isUploading}
-            className="btn-candy-yellow w-full"
-          >
-            <span className="mr-2">⬇️</span> 只下載不上傳
           </button>
 
           <button

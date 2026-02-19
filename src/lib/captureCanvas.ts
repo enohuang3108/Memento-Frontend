@@ -12,9 +12,9 @@ export interface CaptureOptions {
 
 export async function captureCanvas(
   element: HTMLElement,
-  options: CaptureOptions = {}
+  options: CaptureOptions = {},
 ): Promise<Blob> {
-  const { scale = 2, quality = 0.92 } = options;
+  const { scale = 4, quality = 1 } = options;
 
   // 等待字體載入完成
   await document.fonts.ready;
@@ -36,7 +36,7 @@ export async function captureCanvas(
         }
       },
       "image/jpeg",
-      quality
+      quality,
     );
   });
 }

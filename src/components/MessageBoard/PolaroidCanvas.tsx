@@ -34,7 +34,7 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
       onUpdateIllustration,
       onDeleteIllustration,
     },
-    ref
+    ref,
   ) {
     const photoAreaRef = useRef<HTMLDivElement>(null);
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -76,9 +76,9 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
     const getMessageFontSize = (text: string) => {
       const containerWidth = photoAreaSize.width;
       const len = text.length;
-      const baseSize = Math.min(32, containerWidth * 0.3);
+      const baseSize = Math.min(48, containerWidth * 0.3);
       const fitWidthSize = (containerWidth * 0.9) / (len * 0.6);
-      return Math.max(22, Math.min(baseSize, fitWidthSize));
+      return Math.max(28, Math.min(baseSize, fitWidthSize));
     };
 
     const getSmallFontSize = (text: string) => {
@@ -86,7 +86,7 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
       const len = text.length;
       const baseSize = Math.min(18, containerWidth * 0.045);
       const fitWidthSize = (containerWidth * 0.5) / (len * 0.6);
-      return Math.max(20, Math.min(baseSize, fitWidthSize));
+      return Math.max(28, Math.min(baseSize, fitWidthSize));
     };
 
     const handleBackgroundClick = useCallback(() => {
@@ -99,7 +99,7 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
         onClick={handleBackgroundClick}
         className="bg-white rounded-md overflow-hidden flex flex-col"
         style={{
-          padding: "26px 16px 16px 16px",
+          padding: "26px 20px 16px 20px",
           boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
         }}
       >
@@ -139,7 +139,7 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
           {/* Message */}
           {message && (
             <p
-              className="text-text-main leading-snug"
+              className="text-text-main leading-snug wrap-break-word"
               style={{
                 fontFamily: "ChenYuluoyan, sans-serif",
                 fontSize: `${getMessageFontSize(message)}px`,
@@ -174,5 +174,5 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
         </div>
       </div>
     );
-  }
+  },
 );
