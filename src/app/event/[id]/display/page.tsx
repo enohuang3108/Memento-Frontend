@@ -170,6 +170,7 @@ export default function DisplayPage() {
           key={currentPhoto.id}
           src={currentPhoto.fullUrl}
           alt=""
+          referrerPolicy="no-referrer"
           className="absolute inset-0 h-full w-full object-contain animate-fade-in"
         />
       ) : (
