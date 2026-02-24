@@ -8,6 +8,15 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8787";
 
 const DANMAKU_COLORS = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93"];
 
+// 貼圖 ID 到 SVG 的映射
+const STICKER_TO_SVG: Record<string, string> = {
+  "sticker:1": "/assets/danmaku-icons/1.svg",
+  "sticker:2": "/assets/danmaku-icons/2.svg",
+  "sticker:3": "/assets/danmaku-icons/3.svg",
+  "sticker:4": "/assets/danmaku-icons/4.svg",
+  "sticker:5": "/assets/danmaku-icons/5.svg",
+};
+
 function getRandomDanmakuColor(): string {
   return DANMAKU_COLORS[Math.floor(Math.random() * DANMAKU_COLORS.length)];
 }
@@ -94,23 +103,36 @@ export default function DisplayPage() {
         case "danmaku":
           if (danmakuRef.current) {
             try {
-              const color = getRandomDanmakuColor();
-              danmakuRef.current.emit({
-                text: msg.content,
-                style: {
-                  color,
-                  fontSize: "48px",
-                  fontFamily: "'LINE Seed TW', sans-serif",
-                  fontWeight: "bold",
-                  textShadow: `
-                    -2px -2px 0 #fff, 2px -2px 0 #fff,
-                    -2px 2px 0 #fff, 2px 2px 0 #fff,
-                    0 -2px 0 #fff, 0 2px 0 #fff,
-                    -2px 0 0 #fff, 2px 0 0 #fff,
-                    3px 3px 8px rgba(0,0,0,0.3)
-                  `,
-                },
-              });
+              const svgPath = STICKER_TO_SVG[msg.content];
+
+              if (svgPath) {
+                // SVG 圖示彈幕
+                const img = document.createElement("img");
+                img.src = svgPath;
+                img.style.height = "80px";
+                img.style.width = "auto";
+                img.style.filter = "drop-shadow(3px 3px 4px rgba(0,0,0,0.3))";
+                danmakuRef.current.emit({ render: () => img });
+              } else {
+                // 文字彈幕
+                const color = getRandomDanmakuColor();
+                danmakuRef.current.emit({
+                  text: msg.content,
+                  style: {
+                    color,
+                    fontSize: "48px",
+                    fontFamily: "'LINE Seed TW', sans-serif",
+                    fontWeight: "bold",
+                    textShadow: `
+                      -2px -2px 0 #fff, 2px -2px 0 #fff,
+                      -2px 2px 0 #fff, 2px 2px 0 #fff,
+                      0 -2px 0 #fff, 0 2px 0 #fff,
+                      -2px 0 0 #fff, 2px 0 0 #fff,
+                      3px 3px 8px rgba(0,0,0,0.3)
+                    `,
+                  },
+                });
+              }
             } catch (err) {
               console.warn("Danmaku emit failed:", err);
             }

@@ -3,7 +3,7 @@
 /**
  * DanmakuInput Component
  * Input for sending danmaku messages with quick emoji sticker buttons
- * Playful Geometric Design System - Japanese Sticker Style (white outline)
+ * Playful Geometric Design System - SVG icons with hover effects
  */
 
 import { useState, type FormEvent } from "react";
@@ -13,30 +13,26 @@ interface DanmakuInputProps {
   disabled?: boolean;
 }
 
-const QUICK_EMOJIS = ["❤️", "🎉", "㊗️", "🎊", "🎈"];
+interface QuickEmoji {
+  emoji: string;
+  icon: string;
+  alt: string;
+}
+
+const QUICK_EMOJIS: QuickEmoji[] = [
+  { emoji: "sticker:1", icon: "/assets/danmaku-icons/1.svg", alt: "貼圖 1" },
+  { emoji: "sticker:2", icon: "/assets/danmaku-icons/2.svg", alt: "貼圖 2" },
+  { emoji: "sticker:3", icon: "/assets/danmaku-icons/3.svg", alt: "貼圖 3" },
+  { emoji: "sticker:4", icon: "/assets/danmaku-icons/4.svg", alt: "貼圖 4" },
+  { emoji: "sticker:5", icon: "/assets/danmaku-icons/5.svg", alt: "貼圖 5" },
+];
 const EMOJI_COOLDOWN_MS = 1000; // 1秒冷卻時間
 const MAX_DANMAKU_LENGTH = 50;
-
-// 日式貼紙白色描邊效果 - 用多層 text-shadow 模擬輪廓 (4px)
-const stickerOutlineStyle = {
-  textShadow: `
-    -4px -4px 0 #fff, -4px -3px 0 #fff, -4px -2px 0 #fff, -4px -1px 0 #fff, -4px 0px 0 #fff, -4px 1px 0 #fff, -4px 2px 0 #fff, -4px 3px 0 #fff, -4px 4px 0 #fff,
-    -3px -4px 0 #fff, -3px -3px 0 #fff, -3px -2px 0 #fff, -3px -1px 0 #fff, -3px 0px 0 #fff, -3px 1px 0 #fff, -3px 2px 0 #fff, -3px 3px 0 #fff, -3px 4px 0 #fff,
-    -2px -4px 0 #fff, -2px -3px 0 #fff, -2px -2px 0 #fff, -2px -1px 0 #fff, -2px 0px 0 #fff, -2px 1px 0 #fff, -2px 2px 0 #fff, -2px 3px 0 #fff, -2px 4px 0 #fff,
-    -1px -4px 0 #fff, -1px -3px 0 #fff, -1px -2px 0 #fff, -1px -1px 0 #fff, -1px 0px 0 #fff, -1px 1px 0 #fff, -1px 2px 0 #fff, -1px 3px 0 #fff, -1px 4px 0 #fff,
-     0px -4px 0 #fff,  0px -3px 0 #fff,  0px -2px 0 #fff,  0px -1px 0 #fff,                   0px 1px 0 #fff,  0px 2px 0 #fff,  0px 3px 0 #fff,  0px 4px 0 #fff,
-     1px -4px 0 #fff,  1px -3px 0 #fff,  1px -2px 0 #fff,  1px -1px 0 #fff,  1px 0px 0 #fff,  1px 1px 0 #fff,  1px 2px 0 #fff,  1px 3px 0 #fff,  1px 4px 0 #fff,
-     2px -4px 0 #fff,  2px -3px 0 #fff,  2px -2px 0 #fff,  2px -1px 0 #fff,  2px 0px 0 #fff,  2px 1px 0 #fff,  2px 2px 0 #fff,  2px 3px 0 #fff,  2px 4px 0 #fff,
-     3px -4px 0 #fff,  3px -3px 0 #fff,  3px -2px 0 #fff,  3px -1px 0 #fff,  3px 0px 0 #fff,  3px 1px 0 #fff,  3px 2px 0 #fff,  3px 3px 0 #fff,  3px 4px 0 #fff,
-     4px -4px 0 #fff,  4px -3px 0 #fff,  4px -2px 0 #fff,  4px -1px 0 #fff,  4px 0px 0 #fff,  4px 1px 0 #fff,  4px 2px 0 #fff,  4px 3px 0 #fff,  4px 4px 0 #fff,
-     0px 5px 8px rgba(0,0,0,0.15)
-  `,
-};
 
 export function DanmakuInput({ onSend, disabled = false }: DanmakuInputProps) {
   const [content, setContent] = useState("");
   const [emojiCooldowns, setEmojiCooldowns] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
   const [pressedEmoji, setPressedEmoji] = useState<string | null>(null);
 
@@ -75,9 +71,9 @@ export function DanmakuInput({ onSend, disabled = false }: DanmakuInputProps) {
 
   return (
     <div className="flex flex-col gap-6 w-full mx-auto py-4">
-      {/* Japanese Sticker Style Emojis - White Outline */}
+      {/* Quick Emoji SVG Buttons */}
       <div className="flex gap-2 justify-center">
-        {QUICK_EMOJIS.map((emoji) => {
+        {QUICK_EMOJIS.map(({ emoji, icon, alt }) => {
           const isCoolingDown = emojiCooldowns[emoji];
           const isPressed = pressedEmoji === emoji;
 
@@ -88,7 +84,7 @@ export function DanmakuInput({ onSend, disabled = false }: DanmakuInputProps) {
               onClick={() => handleEmojiClick(emoji)}
               disabled={disabled || isCoolingDown}
               className={`
-                text-4xl p-1
+                p-1 size-14
                 transition-all duration-150 ease-out
                 hover:scale-110 hover:-rotate-6
                 active:scale-90
@@ -96,9 +92,13 @@ export function DanmakuInput({ onSend, disabled = false }: DanmakuInputProps) {
                 cursor-pointer select-none
                 ${isPressed ? "scale-90" : ""}
               `}
-              style={stickerOutlineStyle}
             >
-              {emoji}
+              <img
+                src={icon}
+                alt={alt}
+                className="size-full object-contain"
+                draggable={false}
+              />
             </button>
           );
         })}

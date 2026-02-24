@@ -14,6 +14,7 @@ import { GeometricBackground } from "@/components/decorations";
 import { DanmakuInput } from "@/components/DanmakuInput";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { InfoDrawer } from "@/components/InfoDrawer";
+import { convertHeic, isHeicFile } from "@/lib/heicConverter";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8787";
@@ -42,6 +43,8 @@ export default function EventPage() {
   const [event, setEvent] = useState<EventData | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isConvertingHeic, setIsConvertingHeic] = useState(false);
+  const [isPreparingPhoto, setIsPreparingPhoto] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -154,26 +157,48 @@ export default function EventPage() {
   // Message Board handler - select photo and navigate to edit page
   const handleMessageBoardFileSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+      const originalFile = e.target.files?.[0];
+      if (!originalFile) return;
 
       // Reset input for re-selection
       e.target.value = "";
 
-      // Store file data in sessionStorage and navigate to message-board page
-      const reader = new FileReader();
-      reader.onload = () => {
-        sessionStorage.setItem(
-          "messageBoardPhoto",
-          JSON.stringify({
-            dataUrl: reader.result,
-            name: file.name,
-            type: file.type,
-          }),
-        );
-        router.push(`/event/${activityId}/message-board`);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Convert HEIC/HEIF to PNG if needed
+        let file = originalFile;
+        if (isHeicFile(originalFile)) {
+          setIsConvertingHeic(true);
+          file = await convertHeic(originalFile);
+          setIsConvertingHeic(false);
+        }
+
+        // Show loading while reading file
+        setIsPreparingPhoto(true);
+
+        // Store file data in sessionStorage and navigate to message-board page
+        const reader = new FileReader();
+        reader.onload = () => {
+          sessionStorage.setItem(
+            "messageBoardPhoto",
+            JSON.stringify({
+              dataUrl: reader.result,
+              name: file.name,
+              type: file.type,
+            }),
+          );
+          router.push(`/event/${activityId}/message-board`);
+        };
+        reader.onerror = () => {
+          setIsPreparingPhoto(false);
+          setUploadError("無法讀取照片檔案");
+        };
+        reader.readAsDataURL(file);
+      } catch (err) {
+        setIsConvertingHeic(false);
+        setIsPreparingPhoto(false);
+        const message = err instanceof Error ? err.message : "照片處理失敗";
+        setUploadError(message);
+      }
     },
     [activityId, router],
   );
@@ -267,48 +292,66 @@ export default function EventPage() {
             className="mb-6 animate-pop-in"
             style={{ animationDelay: "0.3s" }}
           >
-            <label
-              htmlFor="message-board-photo"
-              className="card-sticker p-4 flex items-center gap-4 cursor-pointer hover:bg-pink-50/50 transition-all group"
-            >
-              <div className="shrink-0 w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <img
-                  src="/assets/icons/message.svg"
-                  alt="照片小紙條"
-                  className="w-8 h-8"
-                />
+            {isConvertingHeic || isPreparingPhoto ? (
+              <div className="card-sticker p-4 flex items-center gap-4">
+                <div className="shrink-0 w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 text-pink-400 animate-spin" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-heading font-bold text-text-main">
+                    {isConvertingHeic ? "正在處理照片..." : "準備中..."}
+                  </h2>
+                  <p className="text-xs text-text-muted">
+                    {isConvertingHeic
+                      ? "HEIC 照片需要轉換格式，請稍候"
+                      : "即將開啟編輯器"}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base font-heading font-bold text-text-main">
-                  照片小紙條
-                </h2>
-                <p className="text-xs text-text-muted">
-                  分享一張照片並留下一段訊息
-                </p>
-              </div>
-              <div className="shrink-0 text-pink-400 group-hover:translate-x-1 transition-transform">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
+            ) : (
+              <label
+                htmlFor="message-board-photo"
+                className="card-sticker p-4 flex items-center gap-4 cursor-pointer hover:bg-pink-50/50 transition-all group"
+              >
+                <div className="shrink-0 w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <img
+                    src="/assets/icons/message.svg"
+                    alt="照片小紙條"
+                    className="w-8 h-8"
                   />
-                </svg>
-              </div>
-              <input
-                id="message-board-photo"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleMessageBoardFileSelect}
-              />
-            </label>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-heading font-bold text-text-main">
+                    照片小紙條
+                  </h2>
+                  <p className="text-xs text-text-muted">
+                    分享一張照片並留下一段訊息
+                  </p>
+                </div>
+                <div className="shrink-0 text-pink-400 group-hover:translate-x-1 transition-transform">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+                <input
+                  id="message-board-photo"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleMessageBoardFileSelect}
+                />
+              </label>
+            )}
           </div>
         )}
         {/* Photo Upload */}

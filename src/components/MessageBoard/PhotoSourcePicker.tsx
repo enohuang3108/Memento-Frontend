@@ -6,7 +6,7 @@
  */
 
 import { useRef, useState, type ChangeEvent } from "react";
-import { convertHeicToPng, isHeicFile } from "@/lib/heicConverter";
+import { convertHeic, isHeicFile } from "@/lib/heicConverter";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ALLOWED_TYPES = [
@@ -54,7 +54,7 @@ export function PhotoSourcePicker({
 
     try {
       setIsConverting(true);
-      const file = await convertHeicToPng(originalFile);
+      const file = await convertHeic(originalFile);
       onSelect(file);
     } catch (err) {
       const message = err instanceof Error ? err.message : "處理失敗";

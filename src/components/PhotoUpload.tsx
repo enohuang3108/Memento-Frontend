@@ -7,7 +7,7 @@
  */
 
 import { useRef, useState, type ChangeEvent } from "react";
-import { convertHeicToPng, isHeicFile } from "@/lib/heicConverter";
+import { convertHeic, isHeicFile } from "@/lib/heicConverter";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 const MAX_PHOTOS = 50;
@@ -104,7 +104,7 @@ export function PhotoUpload({
 
       try {
         // Convert HEIC/HEIF to PNG if needed
-        const file = await convertHeicToPng(originalFile);
+        const file = await convertHeic(originalFile);
 
         // Create preview
         const previewUrl = await new Promise<string>((resolve) => {

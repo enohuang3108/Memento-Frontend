@@ -1,5 +1,5 @@
 /**
- * HEIC/HEIF to PNG Converter
+ * HEIC/HEIF to JPEG Converter
  * Uses heic-to library (libheif 1.21.2) for browser-side conversion
  */
 
@@ -21,10 +21,10 @@ export function isHeicFile(file: File): boolean {
 }
 
 /**
- * Convert HEIC/HEIF file to PNG
- * @returns Converted PNG File, or original file if not HEIC/HEIF
+ * Convert HEIC/HEIF file to JPEG
+ * @returns Converted JPEG File, or original file if not HEIC/HEIF
  */
-export async function convertHeicToPng(file: File): Promise<File> {
+export async function convertHeic(file: File): Promise<File> {
   if (!isHeicFile(file)) {
     return file;
   }
@@ -36,16 +36,17 @@ export async function convertHeicToPng(file: File): Promise<File> {
   }
 
   try {
-    const pngBlob = await heicTo({
+    const jpegBlob = await heicTo({
       blob: file,
-      type: "image/png",
+      type: "image/jpeg",
+      quality: 0.9,
     });
 
-    // Create new File with .png extension
+    // Create new File with .jpg extension
     const baseName = file.name.replace(/\.(heic|heif)$/i, "");
-    const newFileName = `${baseName}.png`;
+    const newFileName = `${baseName}.jpg`;
 
-    return new File([pngBlob], newFileName, { type: "image/png" });
+    return new File([jpegBlob], newFileName, { type: "image/jpeg" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "HEIC 轉換失敗";
     throw new Error(`無法轉換 HEIC 檔案: ${message}`);
