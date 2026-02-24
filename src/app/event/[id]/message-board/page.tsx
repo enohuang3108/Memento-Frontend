@@ -11,7 +11,6 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { GeometricBackground } from "@/components/decorations";
 import {
-  PhotoSourcePicker,
   PolaroidEditor,
   CompletionView,
   IllustrationPicker,
@@ -24,7 +23,7 @@ function generateSessionId() {
   return `session-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-type Step = "select-photo" | "edit" | "complete";
+type Step = "edit" | "complete";
 
 interface EventData {
   id: string;
@@ -43,7 +42,7 @@ export default function MessageBoardPage() {
   const [event, setEvent] = useState<EventData | null>(null);
 
   // Step state
-  const [step, setStep] = useState<Step>("select-photo");
+  const [step, setStep] = useState<Step>("edit");
 
   // Photo state
   const [photo, setPhoto] = useState<File | null>(null);
@@ -67,9 +66,34 @@ export default function MessageBoardPage() {
     color: string;
   } | null>(null);
 
-  // Fetch event data
+  // Load photo from sessionStorage and fetch event data
   useEffect(() => {
-    async function fetchEvent() {
+    async function init() {
+      // Try to load photo from sessionStorage (passed from event page)
+      const storedPhotoData = sessionStorage.getItem("messageBoardPhoto");
+      if (storedPhotoData) {
+        try {
+          const { dataUrl, name, type } = JSON.parse(storedPhotoData);
+          // Convert dataUrl back to File
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          const file = new File([blob], name, { type });
+          setPhoto(file);
+          // Clear sessionStorage after loading
+          sessionStorage.removeItem("messageBoardPhoto");
+        } catch {
+          // If failed to parse, redirect back to event page
+          sessionStorage.removeItem("messageBoardPhoto");
+          router.replace(`/event/${activityId}`);
+          return;
+        }
+      } else {
+        // No photo data, redirect back to event page
+        router.replace(`/event/${activityId}`);
+        return;
+      }
+
+      // Fetch event data
       try {
         const res = await fetch(`${API_URL}/events/${activityId}`);
         if (!res.ok) {
@@ -94,34 +118,18 @@ export default function MessageBoardPage() {
       }
     }
 
-    fetchEvent();
+    init();
   }, [activityId, router]);
 
   const handleBack = useCallback(() => {
-    if (step === "select-photo") {
+    if (step === "edit") {
+      // Return to event page directly
       router.push(`/event/${activityId}`);
-    } else if (step === "edit") {
-      setPhoto(null);
-      setIllustrations([]);
-      setMessage("");
-      setRelation("");
-      setLocationTime("");
-      setStep("select-photo");
     } else if (step === "complete") {
       setComposedBlob(null);
       setStep("edit");
     }
   }, [step, activityId, router]);
-
-  const handlePhotoSelect = useCallback((file: File) => {
-    setPhoto(file);
-    setStep("edit");
-    setError(null);
-  }, []);
-
-  const handlePhotoError = useCallback((errorMessage: string) => {
-    setError(errorMessage);
-  }, []);
 
   const handleComplete = useCallback(async (blob: Blob) => {
     setIsComposing(true);
@@ -131,8 +139,7 @@ export default function MessageBoardPage() {
       setComposedBlob(blob);
       setStep("complete");
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "合成照片失敗";
+      const errorMessage = err instanceof Error ? err.message : "合成照片失敗";
       setError(errorMessage);
     } finally {
       setIsComposing(false);
@@ -218,7 +225,7 @@ export default function MessageBoardPage() {
           </button>
           <div>
             <h1 className="text-xl font-heading font-bold text-text-main">
-              製作留言板
+              照片小紙條
             </h1>
             {event && <p className="text-sm text-text-muted">{event.title}</p>}
           </div>
@@ -231,14 +238,6 @@ export default function MessageBoardPage() {
             <div className="mb-4 p-3 bg-red-50 border-2 border-red-400 rounded-xl">
               <p className="text-sm text-red-600 font-bold">{error}</p>
             </div>
-          )}
-
-          {/* Step: Select Photo */}
-          {step === "select-photo" && (
-            <PhotoSourcePicker
-              onSelect={handlePhotoSelect}
-              onError={handlePhotoError}
-            />
           )}
 
           {/* Step: Edit */}

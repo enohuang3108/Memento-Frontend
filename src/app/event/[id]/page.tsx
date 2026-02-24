@@ -7,8 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { GeometricBackground } from "@/components/decorations";
@@ -34,6 +33,7 @@ interface EventData {
 
 export default function EventPage() {
   const params = useParams();
+  const router = useRouter();
   const activityId = params.id as string;
 
   const [sessionId] = useState(() => generateSessionId());
@@ -151,6 +151,33 @@ export default function EventPage() {
     }
   }, []);
 
+  // Message Board handler - select photo and navigate to edit page
+  const handleMessageBoardFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Reset input for re-selection
+      e.target.value = "";
+
+      // Store file data in sessionStorage and navigate to message-board page
+      const reader = new FileReader();
+      reader.onload = () => {
+        sessionStorage.setItem(
+          "messageBoardPhoto",
+          JSON.stringify({
+            dataUrl: reader.result,
+            name: file.name,
+            type: file.type,
+          }),
+        );
+        router.push(`/event/${activityId}/message-board`);
+      };
+      reader.readAsDataURL(file);
+    },
+    [activityId, router],
+  );
+
   // Loading state
   if (isLoading) {
     return (
@@ -234,7 +261,57 @@ export default function EventPage() {
           </div>
         )}
 
-        {/* Primary Actions - Photo Upload */}
+        {/* Message Board - Compact horizontal card */}
+        {event.status === "active" && (
+          <div
+            className="mb-6 animate-pop-in"
+            style={{ animationDelay: "0.3s" }}
+          >
+            <label
+              htmlFor="message-board-photo"
+              className="card-sticker p-4 flex items-center gap-4 cursor-pointer hover:bg-pink-50/50 transition-all group"
+            >
+              <div className="shrink-0 w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <img
+                  src="/assets/icons/message.svg"
+                  alt="照片小紙條"
+                  className="w-8 h-8"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base font-heading font-bold text-text-main">
+                  照片小紙條
+                </h2>
+                <p className="text-xs text-text-muted">
+                  分享一張照片並留下一段訊息
+                </p>
+              </div>
+              <div className="shrink-0 text-pink-400 group-hover:translate-x-1 transition-transform">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+              <input
+                id="message-board-photo"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleMessageBoardFileSelect}
+              />
+            </label>
+          </div>
+        )}
+        {/* Photo Upload */}
         {event.status === "active" && (
           <div
             className="mb-6 animate-pop-in"
@@ -253,26 +330,6 @@ export default function EventPage() {
                 </p>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Message Board Entry */}
-        {event.status === "active" && (
-          <div
-            className="mb-6 animate-pop-in"
-            style={{ animationDelay: "0.3s" }}
-          >
-            <div className="card-sticker p-6 text-center">
-              <p className="text-sm text-text-muted mb-4">
-                想要在照片上加上留言嗎？
-              </p>
-              <Link
-                href={`/event/${activityId}/message-board`}
-                className="btn-candy-pink w-full flex items-center justify-center gap-2"
-              >
-                製作留言板
-              </Link>
-            </div>
           </div>
         )}
       </div>

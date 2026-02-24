@@ -6,6 +6,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8787";
 
+const DANMAKU_COLORS = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93"];
+
+function getRandomDanmakuColor(): string {
+  return DANMAKU_COLORS[Math.floor(Math.random() * DANMAKU_COLORS.length)];
+}
+
 interface Photo {
   id: string;
   fullUrl: string;
@@ -88,12 +94,21 @@ export default function DisplayPage() {
         case "danmaku":
           if (danmakuRef.current) {
             try {
+              const color = getRandomDanmakuColor();
               danmakuRef.current.emit({
                 text: msg.content,
                 style: {
-                  color: "#ffffff",
-                  fontSize: "32px",
-                  textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+                  color,
+                  fontSize: "48px",
+                  fontFamily: "'LINE Seed TW', sans-serif",
+                  fontWeight: "bold",
+                  textShadow: `
+                    -2px -2px 0 #fff, 2px -2px 0 #fff,
+                    -2px 2px 0 #fff, 2px 2px 0 #fff,
+                    0 -2px 0 #fff, 0 2px 0 #fff,
+                    -2px 0 0 #fff, 2px 0 0 #fff,
+                    3px 3px 8px rgba(0,0,0,0.3)
+                  `,
                 },
               });
             } catch (err) {

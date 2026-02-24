@@ -306,9 +306,11 @@ export function PhotoUpload({
                 className="flex flex-col items-center justify-center w-full h-64 border-3 border-dashed border-accent/50 rounded-2xl cursor-pointer hover:border-accent hover:bg-accent/5 transition-all group"
               >
                 <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-                  <div className="text-6xl mb-4 group-hover:animate-bounce-slight">
-                    📸
-                  </div>
+                  <img
+                    src="/assets/icons/photos.svg"
+                    alt="上傳照片"
+                    className="w-16 h-16 mb-4 group-hover:animate-bounce-slight"
+                  />
                   <p className="mb-2 text-sm text-text-main font-heading font-bold">
                     點擊選擇照片
                   </p>

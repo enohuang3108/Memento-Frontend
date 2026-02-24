@@ -39,8 +39,10 @@ export function CompletionView({
   const [isUploaded, setIsUploaded] = useState(false);
   const [previewUrl] = useState(() => URL.createObjectURL(composedBlob));
 
-  // Trigger confetti when upload succeeds
+  // Trigger confetti only when upload succeeds
   useEffect(() => {
+    if (!isUploaded) return;
+
     const runConfetti = async () => {
       const confettiModule = await import("canvas-confetti");
       const confetti = confettiModule.default;
@@ -93,10 +95,30 @@ export function CompletionView({
     runConfetti();
   }, [isUploaded]);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    const fileName = `memento-${Date.now()}.jpg`;
+    const file = new File([composedBlob], fileName, { type: "image/jpeg" });
+
+    // 嘗試使用 Web Share API（手機可直接儲存到相簿）
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "Memento 照片",
+        });
+        return;
+      } catch (error) {
+        // 用戶取消分享或發生錯誤，改用傳統下載
+        if ((error as Error).name === "AbortError") {
+          return; // 用戶取消，不做任何事
+        }
+      }
+    }
+
+    // 傳統下載方式（桌機或不支援 Share API 的裝置）
     const link = document.createElement("a");
     link.href = previewUrl;
-    link.download = `memento-${Date.now()}.jpg`;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -157,14 +179,10 @@ export function CompletionView({
       ) : (
         <div className="space-y-4">
           <button
-            onClick={handleDownload}
-            disabled={isUploading}
-            className="btn-candy w-full"
-          >
-            下載照片
-          </button>
-          <button
-            onClick={handleUpload}
+            onClick={() => {
+              handleDownload();
+              handleUpload();
+            }}
             disabled={isUploading}
             className="btn-candy-yellow w-full flex items-center justify-center gap-2"
           >
@@ -174,8 +192,15 @@ export function CompletionView({
                 上傳中...
               </>
             ) : (
-              <>上傳到照片牆</>
+              <>下載並上傳</>
             )}
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={isUploading}
+            className="btn-candy w-full"
+          >
+            僅下載
           </button>
 
           <button
