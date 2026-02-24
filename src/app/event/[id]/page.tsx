@@ -15,6 +15,7 @@ import { DanmakuInput } from "@/components/DanmakuInput";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { InfoDrawer } from "@/components/InfoDrawer";
 import { convertHeic, isHeicFile } from "@/lib/heicConverter";
+import { storePhoto } from "@/lib/photoStorage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8787";
@@ -172,27 +173,12 @@ export default function EventPage() {
           setIsConvertingHeic(false);
         }
 
-        // Show loading while reading file
+        // Show loading while storing file
         setIsPreparingPhoto(true);
 
-        // Store file data in sessionStorage and navigate to message-board page
-        const reader = new FileReader();
-        reader.onload = () => {
-          sessionStorage.setItem(
-            "messageBoardPhoto",
-            JSON.stringify({
-              dataUrl: reader.result,
-              name: file.name,
-              type: file.type,
-            }),
-          );
-          router.push(`/event/${activityId}/message-board`);
-        };
-        reader.onerror = () => {
-          setIsPreparingPhoto(false);
-          setUploadError("無法讀取照片檔案");
-        };
-        reader.readAsDataURL(file);
+        // Store file in IndexedDB and navigate to message-board page
+        await storePhoto(file);
+        router.push(`/event/${activityId}/message-board`);
       } catch (err) {
         setIsConvertingHeic(false);
         setIsPreparingPhoto(false);

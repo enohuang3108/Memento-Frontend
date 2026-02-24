@@ -16,6 +16,7 @@ import {
   IllustrationPicker,
 } from "@/components/MessageBoard";
 import type { Illustration } from "@/lib/illustrations";
+import { retrievePhoto, clearPhoto } from "@/lib/photoStorage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 
@@ -66,29 +67,23 @@ export default function MessageBoardPage() {
     color: string;
   } | null>(null);
 
-  // Load photo from sessionStorage and fetch event data
+  // Load photo from IndexedDB and fetch event data
   useEffect(() => {
     async function init() {
-      // Try to load photo from sessionStorage (passed from event page)
-      const storedPhotoData = sessionStorage.getItem("messageBoardPhoto");
-      if (storedPhotoData) {
-        try {
-          const { dataUrl, name, type } = JSON.parse(storedPhotoData);
-          // Convert dataUrl back to File
-          const res = await fetch(dataUrl);
-          const blob = await res.blob();
-          const file = new File([blob], name, { type });
+      // Try to load photo from IndexedDB (passed from event page)
+      try {
+        const file = await retrievePhoto();
+        if (file) {
           setPhoto(file);
-          // Clear sessionStorage after loading
-          sessionStorage.removeItem("messageBoardPhoto");
-        } catch {
-          // If failed to parse, redirect back to event page
-          sessionStorage.removeItem("messageBoardPhoto");
+          // Clear IndexedDB after loading
+          await clearPhoto();
+        } else {
+          // No photo data, redirect back to event page
           router.replace(`/event/${activityId}`);
           return;
         }
-      } else {
-        // No photo data, redirect back to event page
+      } catch {
+        // If failed to retrieve, redirect back to event page
         router.replace(`/event/${activityId}`);
         return;
       }
