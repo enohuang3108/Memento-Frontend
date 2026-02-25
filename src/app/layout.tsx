@@ -13,6 +13,9 @@ const APP_TITLE_TEMPLATE = "%s | Memento";
 const APP_DESCRIPTION = "打造您的專屬即時照片牆，讓每一刻精彩瞬間即時分享";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://memento.oddlab.cc",
+  ),
   applicationName: APP_NAME,
   title: {
     default: APP_DEFAULT_TITLE,
