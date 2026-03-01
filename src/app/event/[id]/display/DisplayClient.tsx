@@ -174,10 +174,13 @@ export function DisplayClient({ activityId }: DisplayClientProps) {
           setCurrentIndex(photoIndex);
         }
       } else {
-        // Normal rotation
+        // Random playback
         isPlayingPendingRef.current = false;
         if (photos.length > 1) {
-          const nextIndex = (normalIndexRef.current + 1) % photos.length;
+          let nextIndex: number;
+          do {
+            nextIndex = Math.floor(Math.random() * photos.length);
+          } while (nextIndex === normalIndexRef.current);
           normalIndexRef.current = nextIndex;
           setCurrentIndex(nextIndex);
         }
