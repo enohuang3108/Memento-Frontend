@@ -6,17 +6,18 @@
  * Playful Geometric Design System
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import { Logo } from "@/components/Logo";
-import { GeometricBackground } from "@/components/decorations";
 import { DanmakuInput } from "@/components/DanmakuInput";
-import { PhotoUpload } from "@/components/PhotoUpload";
 import { InfoDrawer } from "@/components/InfoDrawer";
+import { Logo } from "@/components/Logo";
+import { PhotoUpload } from "@/components/PhotoUpload";
+import { GeometricBackground } from "@/components/decorations";
+import type { EventData } from "@/lib/api";
 import { convertHeic, isHeicFile } from "@/lib/heicConverter";
 import { storePhoto } from "@/lib/photoStorage";
-import type { EventData } from "@/lib/api";
+import { Camera, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8787";
@@ -43,6 +44,7 @@ export function EventClient({ activityId, initialEvent }: EventClientProps) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isConvertingHeic, setIsConvertingHeic] = useState(false);
   const [isPreparingPhoto, setIsPreparingPhoto] = useState(false);
+  const [isPhotoUploadExpanded, setIsPhotoUploadExpanded] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -269,15 +271,15 @@ export function EventClient({ activityId, initialEvent }: EventClientProps) {
             style={{ animationDelay: "0.3s" }}
           >
             {isConvertingHeic || isPreparingPhoto ? (
-              <div className="card-sticker p-4 flex items-center gap-4">
-                <div className="shrink-0 w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 text-pink-400 animate-spin" />
+              <div className="card-sticker p-5 flex items-center gap-4">
+                <div className="shrink-0 w-16 h-16 bg-pink-100 rounded-xl flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-pink-400 animate-spin" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-heading font-bold text-text-main">
+                  <h2 className="text-lg font-heading font-bold text-text-main">
                     {isConvertingHeic ? "正在處理照片..." : "準備中..."}
                   </h2>
-                  <p className="text-xs text-text-muted">
+                  <p className="text-sm text-text-muted">
                     {isConvertingHeic
                       ? "HEIC 照片需要轉換格式，請稍候"
                       : "即將開啟編輯器"}
@@ -287,26 +289,26 @@ export function EventClient({ activityId, initialEvent }: EventClientProps) {
             ) : (
               <label
                 htmlFor="message-board-photo"
-                className="card-sticker p-4 flex items-center gap-4 cursor-pointer hover:bg-pink-50/50 transition-all group"
+                className="card-sticker p-5 flex items-center gap-4 cursor-pointer hover:bg-pink-50/50 transition-all group"
               >
-                <div className="shrink-0 w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="shrink-0 w-16 h-16 bg-pink-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                   <img
                     src="/assets/icons/message.svg"
-                    alt="照片小紙條"
-                    className="w-8 h-8"
+                    alt="回憶便利貼"
+                    className="w-10 h-10"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-heading font-bold text-text-main">
-                    照片小紙條
+                  <h2 className="text-lg font-heading font-bold text-text-main">
+                    回憶便利貼
                   </h2>
-                  <p className="text-xs text-text-muted">
+                  <p className="text-sm text-text-muted">
                     分享一張照片並留下一段訊息
                   </p>
                 </div>
                 <div className="shrink-0 text-pink-400 group-hover:translate-x-1 transition-transform">
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -330,18 +332,62 @@ export function EventClient({ activityId, initialEvent }: EventClientProps) {
             )}
           </div>
         )}
-        {/* Photo Upload */}
+        {/* Photo Upload - Collapsible */}
         {event.status === "active" && (
           <div
             className="mb-6 animate-pop-in"
             style={{ animationDelay: "0.2s" }}
           >
-            <PhotoUpload
-              activityId={activityId}
-              sessionId={sessionId}
-              onUploadSuccess={handleUploadSuccess}
-              onUploadError={(error) => setUploadError(error)}
-            />
+            {/* Collapsed trigger button */}
+            <button
+              type="button"
+              onClick={() => setIsPhotoUploadExpanded(!isPhotoUploadExpanded)}
+              className="w-full card-sticker p-5 flex items-center gap-4 cursor-pointer hover:bg-blue-50/50 transition-all group"
+            >
+              <div className="shrink-0 w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <img
+                    src="/assets/icons/photos.svg"
+                    alt="上傳照片"
+                    className="w-10 h-10"
+                  />
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <h2 className="text-base font-heading font-bold text-text-main">
+                  上傳照片
+                </h2>
+                <p className="text-xs text-text-muted">一次上傳多張照片，最多 50 張</p>
+              </div>
+              <div className="shrink-0 text-blue-400 transition-transform">
+                {isPhotoUploadExpanded ? (
+                  <ChevronUp className="w-6 h-6" />
+                ) : (
+                  <ChevronDown className="w-6 h-6" />
+                )}
+              </div>
+            </button>
+
+            {/* Expandable PhotoUpload area */}
+            <AnimatePresence>
+              {isPhotoUploadExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-4">
+                    <PhotoUpload
+                      activityId={activityId}
+                      sessionId={sessionId}
+                      onUploadSuccess={handleUploadSuccess}
+                      onUploadError={(error) => setUploadError(error)}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {uploadError && (
               <div className="mt-3 p-3 bg-red-50 border-2 border-red-400 rounded-xl animate-wiggle">
                 <p className="text-sm text-red-600 text-center font-bold">

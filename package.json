@@ -17,6 +17,7 @@
     "interactjs": "^1.10.27",
     "lucide-react": "^0.563.0",
     "modern-screenshot": "^4.6.8",
+    "motion": "^12.34.3",
     "next": "16.1.6",
     "qrcode.react": "^4.2.0",
     "radix-ui": "^1.4.3",
