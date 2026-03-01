@@ -73,12 +73,15 @@ export function MessageBoardClient({
   useEffect(() => {
     async function init() {
       // Try to load photo from IndexedDB (passed from event page)
+      // Note: We do NOT clear IndexedDB here - it will be cleared when:
+      // 1. Upload succeeds
+      // 2. User completes the flow
+      // 3. User explicitly goes back to event page
+      // This prevents photo loss when browser goes to background on mobile
       try {
         const file = await retrievePhoto();
         if (file) {
           setPhoto(file);
-          // Clear IndexedDB after loading
-          await clearPhoto();
         } else {
           // No photo data, redirect back to event page
           router.replace(`/event/${activityId}`);
@@ -128,9 +131,10 @@ export function MessageBoardClient({
     init();
   }, [activityId, router, initialEvent]);
 
-  const handleBack = useCallback(() => {
+  const handleBack = useCallback(async () => {
     if (step === "edit") {
-      // Return to event page directly
+      // User is leaving the flow - clear IndexedDB
+      await clearPhoto();
       router.push(`/event/${activityId}`);
     } else if (step === "complete") {
       setComposedBlob(null);
@@ -158,8 +162,9 @@ export function MessageBoardClient({
     setStep("edit");
   }, []);
 
-  const handleUploadSuccess = useCallback(() => {
-    // Navigate back to event page after successful upload
+  const handleUploadSuccess = useCallback(async () => {
+    // Upload succeeded - clear IndexedDB and navigate back
+    await clearPhoto();
     router.push(`/event/${activityId}`);
   }, [activityId, router]);
 
@@ -167,7 +172,9 @@ export function MessageBoardClient({
     setError(errorMessage);
   }, []);
 
-  const handleClose = useCallback(() => {
+  const handleClose = useCallback(async () => {
+    // User completed the flow - clear IndexedDB
+    await clearPhoto();
     router.push(`/event/${activityId}`);
   }, [activityId, router]);
 
