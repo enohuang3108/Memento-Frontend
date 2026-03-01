@@ -17,6 +17,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import type { TouchEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DotPatternSubtle } from "./decorations";
@@ -30,7 +31,6 @@ interface InfoDrawerProps {
     status: "active" | "ended";
   };
   isConnected: boolean;
-  qrCodeUrl: string;
 }
 
 type DrawerState = "closed" | "peek" | "open";
@@ -39,7 +39,6 @@ export function InfoDrawer({
   activityId,
   event,
   isConnected,
-  qrCodeUrl,
 }: InfoDrawerProps) {
   const [drawerState, setDrawerState] = useState<DrawerState>("peek");
   const [isDragging, setIsDragging] = useState(false);
@@ -48,6 +47,14 @@ export function InfoDrawer({
   const [isCopied, setIsCopied] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // QR code URL (only available on client side)
+  const [participantUrl, setParticipantUrl] = useState<string>("");
+
+  // Generate participant URL on client side
+  useEffect(() => {
+    setParticipantUrl(`${window.location.origin}/event/${activityId}`);
+  }, [activityId]);
 
   // QR code 五連點隱藏入口
   const [clickCount, setClickCount] = useState(0);
@@ -245,11 +252,16 @@ export function InfoDrawer({
               style={{ boxShadow: "4px 4px 0px 0px #8B5CF6" }}
               onClick={handleQRCodeClick}
             >
-              <img
-                src={qrCodeUrl}
-                alt="Event QR Code"
-                className="w-48 h-48 mx-auto"
-              />
+              {participantUrl ? (
+                <QRCodeSVG
+                  value={participantUrl}
+                  size={192}
+                  level="M"
+                  className="mx-auto"
+                />
+              ) : (
+                <div className="w-48 h-48 bg-muted animate-pulse rounded-lg" />
+              )}
             </div>
             <button
               onClick={handleCopyUrl}

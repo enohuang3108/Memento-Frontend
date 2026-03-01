@@ -225,15 +225,6 @@ export function EventClient({ activityId, initialEvent }: EventClientProps) {
     );
   }
 
-  // Generate QR code URL for this event
-  const participantUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/event/${activityId}`
-      : "";
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-    participantUrl,
-  )}`;
-
   return (
     <div className="min-h-screen bg-background pb-24 pt-8 relative overflow-hidden">
       {/* Logo in top-left corner */}
@@ -372,7 +363,6 @@ export function EventClient({ activityId, initialEvent }: EventClientProps) {
           status: event.status,
         }}
         isConnected={isConnected}
-        qrCodeUrl={qrCodeUrl}
       />
     </div>
   );
