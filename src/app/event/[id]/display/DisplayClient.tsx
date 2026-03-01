@@ -212,6 +212,10 @@ export function DisplayClient({ activityId }: DisplayClientProps) {
           alt=""
           referrerPolicy="no-referrer"
           className="absolute inset-0 h-full w-full object-contain animate-fade-in"
+          onError={() => {
+            // 照片載入失敗（可能已從 Google Drive 刪除），移除並跳到下一張
+            setPhotos((prev) => prev.filter((p) => p.id !== currentPhoto.id));
+          }}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center">
