@@ -36,7 +36,7 @@ export function MessageForm({
           htmlFor="message"
           className="block text-sm font-heading font-bold text-text-muted mb-2"
         >
-          留言
+          留言 <span className="text-red-500">*</span>
         </label>
         <textarea
           id="message"
@@ -45,6 +45,7 @@ export function MessageForm({
           maxLength={100}
           rows={3}
           placeholder="寫下你想說的話..."
+          required
           className="input-playful resize-none"
         />
         <p className="mt-1 text-xs text-text-muted text-right">

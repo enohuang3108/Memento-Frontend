@@ -151,7 +151,7 @@ export function PolaroidEditor({
       {/* Complete Button */}
       <button
         onClick={handleComplete}
-        disabled={isComposing || isCapturing}
+        disabled={isComposing || isCapturing || !message.trim()}
         className="btn-candy w-full flex items-center justify-center gap-2"
       >
         {isComposing || isCapturing ? (
