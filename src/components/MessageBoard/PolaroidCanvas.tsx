@@ -15,6 +15,7 @@ interface PolaroidCanvasProps {
   message: string;
   relation: string;
   locationTime: string;
+  messageFontSize: number;
   illustrations: Illustration[];
   selectedId: string | null;
   onSelectIllustration: (id: string | null) => void;
@@ -29,6 +30,7 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
       message,
       relation,
       locationTime,
+      messageFontSize,
       illustrations,
       selectedId,
       onSelectIllustration,
@@ -74,15 +76,6 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
       observer.observe(card);
       return () => observer.disconnect();
     }, []);
-
-    // Calculate responsive font sizes based on text length and container width
-    const getMessageFontSize = (text: string) => {
-      const containerWidth = cardSize.width;
-      const len = text.length;
-      const baseSize = Math.min(48, containerWidth * 0.3);
-      const fitWidthSize = (containerWidth * 0.9) / (len * 0.6);
-      return Math.max(28, Math.min(baseSize, fitWidthSize));
-    };
 
     const getSmallFontSize = (text: string) => {
       const containerWidth = cardSize.width;
@@ -199,7 +192,7 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
               className="text-text-main leading-snug wrap-break-word"
               style={{
                 fontFamily: "ChenYuluoyan, sans-serif",
-                fontSize: `${getMessageFontSize(message)}px`,
+                fontSize: `${messageFontSize}rem`,
               }}
             >
               「{message}」

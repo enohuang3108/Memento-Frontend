@@ -18,10 +18,12 @@ interface PolaroidEditorProps {
   message: string;
   relation: string;
   locationTime: string;
+  messageFontSize: number;
   illustrations: Illustration[];
   onMessageChange: (value: string) => void;
   onRelationChange: (value: string) => void;
   onLocationTimeChange: (value: string) => void;
+  onMessageFontSizeChange: (value: number) => void;
   onIllustrationsChange: (illustrations: Illustration[]) => void;
   onComplete: (blob: Blob) => void;
   isComposing: boolean;
@@ -35,10 +37,12 @@ export function PolaroidEditor({
   message,
   relation,
   locationTime,
+  messageFontSize,
   illustrations,
   onMessageChange,
   onRelationChange,
   onLocationTimeChange,
+  onMessageFontSizeChange,
   onIllustrationsChange,
   onComplete,
   isComposing,
@@ -61,7 +65,12 @@ export function PolaroidEditor({
       setSelectedId(newIllust.id);
       onIllustrationAdded();
     }
-  }, [pendingIllustration, onIllustrationAdded, illustrations, onIllustrationsChange]);
+  }, [
+    pendingIllustration,
+    onIllustrationAdded,
+    illustrations,
+    onIllustrationsChange,
+  ]);
 
   const handleUpdateIllustration = useCallback(
     (id: string, updates: Partial<Illustration>) => {
@@ -112,6 +121,7 @@ export function PolaroidEditor({
         message={message}
         relation={relation}
         locationTime={locationTime}
+        messageFontSize={messageFontSize}
         illustrations={illustrations}
         selectedId={selectedId}
         onSelectIllustration={setSelectedId}
@@ -127,9 +137,11 @@ export function PolaroidEditor({
         message={message}
         relation={relation}
         locationTime={locationTime}
+        messageFontSize={messageFontSize}
         onMessageChange={onMessageChange}
         onRelationChange={onRelationChange}
         onLocationTimeChange={onLocationTimeChange}
+        onMessageFontSizeChange={onMessageFontSizeChange}
       />
 
       {/* Complete Button */}

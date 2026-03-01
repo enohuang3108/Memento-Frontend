@@ -53,6 +53,7 @@ export function MessageBoardClient({
   const [message, setMessage] = useState("");
   const [relation, setRelation] = useState("");
   const [locationTime, setLocationTime] = useState("");
+  const [messageFontSize, setMessageFontSize] = useState(2.5); // rem, default ~28px
 
   // Illustrations state (lifted from PolaroidEditor)
   const [illustrations, setIllustrations] = useState<Illustration[]>([]);
@@ -173,6 +174,8 @@ export function MessageBoardClient({
   const handleAddIllustration = useCallback((src: string, color: string) => {
     setPendingIllustration({ src, color });
     setIsPickerOpen(false);
+    // 滾動到頂部讓用戶看見圖片
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const handleIllustrationAdded = useCallback(() => {
@@ -253,10 +256,12 @@ export function MessageBoardClient({
               message={message}
               relation={relation}
               locationTime={locationTime}
+              messageFontSize={messageFontSize}
               illustrations={illustrations}
               onMessageChange={setMessage}
               onRelationChange={setRelation}
               onLocationTimeChange={setLocationTime}
+              onMessageFontSizeChange={setMessageFontSize}
               onIllustrationsChange={setIllustrations}
               onComplete={handleComplete}
               isComposing={isComposing}

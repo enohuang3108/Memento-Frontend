@@ -5,22 +5,28 @@
  * Input fields for message, relation, and location/time
  */
 
+import { Slider } from "@/components/ui/slider";
+
 interface MessageFormProps {
   message: string;
   relation: string;
   locationTime: string;
+  messageFontSize: number;
   onMessageChange: (value: string) => void;
   onRelationChange: (value: string) => void;
   onLocationTimeChange: (value: string) => void;
+  onMessageFontSizeChange: (value: number) => void;
 }
 
 export function MessageForm({
   message,
   relation,
   locationTime,
+  messageFontSize,
   onMessageChange,
   onRelationChange,
   onLocationTimeChange,
+  onMessageFontSizeChange,
 }: MessageFormProps) {
   return (
     <div className="space-y-4">
@@ -44,6 +50,27 @@ export function MessageForm({
         <p className="mt-1 text-xs text-text-muted text-right">
           {message.length}/100
         </p>
+
+        {/* Font Size Slider */}
+        <div className="mt-3">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-heading font-bold text-text-muted">
+              文字大小
+            </label>
+          </div>
+          <Slider
+            value={[messageFontSize]}
+            onValueChange={(values) => onMessageFontSizeChange(values[0])}
+            min={2}
+            max={3.5}
+            step={0.1}
+            className="w-full"
+          />
+          <div className="flex justify-between text-xs text-text-muted mt-1">
+            <span>小</span>
+            <span>大</span>
+          </div>
+        </div>
       </div>
 
       {/* Relation */}
