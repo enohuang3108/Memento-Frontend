@@ -5,19 +5,19 @@
  * Standalone page for creating polaroid-style message board photos
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2, ArrowLeft } from "lucide-react";
-import { Logo } from "@/components/Logo";
 import { GeometricBackground } from "@/components/decorations";
+import { Logo } from "@/components/Logo";
 import {
-  PolaroidEditor,
   CompletionView,
   IllustrationPicker,
+  PolaroidEditor,
 } from "@/components/MessageBoard";
-import type { Illustration } from "@/lib/illustrations";
-import { retrievePhoto, clearPhoto } from "@/lib/photoStorage";
 import type { EventData } from "@/lib/api";
+import type { Illustration } from "@/lib/illustrations";
+import { clearPhoto, retrievePhoto } from "@/lib/photoStorage";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 
@@ -241,7 +241,7 @@ export function MessageBoardClient({
           </button>
           <div>
             <h1 className="text-xl font-heading font-bold text-text-main">
-              照片小紙條
+              回憶便利貼
             </h1>
             {event && <p className="text-sm text-text-muted">{event.title}</p>}
           </div>

@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
 import { fetchEvent } from "@/lib/api";
+import type { Metadata } from "next";
 import { MessageBoardClient } from "./MessageBoardClient";
 
 interface PageProps {
@@ -12,10 +12,10 @@ export async function generateMetadata({
   const { id } = await params;
   const event = await fetchEvent(id);
 
-  const title = event?.title ? `${event.title} - 照片小紙條` : "照片小紙條";
+  const title = event?.title ? `${event.title} - 回憶便利貼` : "回憶便利貼";
   const description = event
-    ? `在「${event.title}」留下你的照片小紙條`
-    : "留下你的照片小紙條";
+    ? `在「${event.title}」留下你的回憶便利貼`
+    : "留下你的回憶便利貼";
 
   return {
     title,
