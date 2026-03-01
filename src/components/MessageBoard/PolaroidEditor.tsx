@@ -9,6 +9,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { PolaroidCanvas } from "./PolaroidCanvas";
 import { AddIllustrationButton } from "./IllustrationPicker";
+import { CropPhotoButton } from "./ImageCropper";
 import { MessageForm } from "./MessageForm";
 import { createIllustration, type Illustration } from "@/lib/illustrations";
 import { captureCanvas } from "@/lib/captureCanvas";
@@ -28,6 +29,7 @@ interface PolaroidEditorProps {
   onComplete: (blob: Blob) => void;
   isComposing: boolean;
   onOpenPicker: () => void;
+  onOpenCropper: () => void;
   pendingIllustration: { src: string; color: string } | null;
   onIllustrationAdded: () => void;
 }
@@ -47,6 +49,7 @@ export function PolaroidEditor({
   onComplete,
   isComposing,
   onOpenPicker,
+  onOpenCropper,
   pendingIllustration,
   onIllustrationAdded,
 }: PolaroidEditorProps) {
@@ -128,8 +131,9 @@ export function PolaroidEditor({
         onUpdateIllustration={handleUpdateIllustration}
         onDeleteIllustration={handleDeleteIllustration}
       />
-      {/* Add Illustration Button */}
-      <div className="flex">
+      {/* Action Buttons */}
+      <div className="flex gap-3">
+        <CropPhotoButton onClick={onOpenCropper} />
         <AddIllustrationButton onClick={onOpenPicker} />
       </div>
       {/* Message Form */}

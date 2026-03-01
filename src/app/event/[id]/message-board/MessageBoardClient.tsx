@@ -10,6 +10,7 @@ import { Logo } from "@/components/Logo";
 import {
   CompletionView,
   IllustrationPicker,
+  ImageCropper,
   PolaroidEditor,
 } from "@/components/MessageBoard";
 import type { EventData } from "@/lib/api";
@@ -69,6 +70,10 @@ export function MessageBoardClient({
     color: string;
   } | null>(null);
 
+  // Image cropper state
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [originalPhotoUrl, setOriginalPhotoUrl] = useState<string | null>(null);
+
   // Load photo from IndexedDB and fetch event data
   useEffect(() => {
     async function init() {
@@ -82,6 +87,8 @@ export function MessageBoardClient({
         const file = await retrievePhoto();
         if (file) {
           setPhoto(file);
+          // Save original photo URL for cropper
+          setOriginalPhotoUrl(URL.createObjectURL(file));
         } else {
           // No photo data, redirect back to event page
           router.replace(`/event/${activityId}`);
@@ -189,6 +196,25 @@ export function MessageBoardClient({
     setPendingIllustration(null);
   }, []);
 
+  const handleOpenCropper = useCallback(() => {
+    setIsCropperOpen(true);
+  }, []);
+
+  const handleCropComplete = useCallback(
+    (croppedFile: File) => {
+      setPhoto(croppedFile);
+      // Update the original photo URL to the cropped version for potential re-cropping
+      if (originalPhotoUrl) {
+        URL.revokeObjectURL(originalPhotoUrl);
+      }
+      setOriginalPhotoUrl(URL.createObjectURL(croppedFile));
+      setIsCropperOpen(false);
+      // Scroll to top to show the cropped photo
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [originalPhotoUrl],
+  );
+
   // Loading state
   if (isLoading) {
     return (
@@ -273,6 +299,7 @@ export function MessageBoardClient({
               onComplete={handleComplete}
               isComposing={isComposing}
               onOpenPicker={() => setIsPickerOpen(true)}
+              onOpenCropper={handleOpenCropper}
               pendingIllustration={pendingIllustration}
               onIllustrationAdded={handleIllustrationAdded}
             />
@@ -299,6 +326,16 @@ export function MessageBoardClient({
         onClose={() => setIsPickerOpen(false)}
         onAdd={handleAddIllustration}
       />
+
+      {/* Image Cropper - rendered at page level */}
+      {originalPhotoUrl && (
+        <ImageCropper
+          isOpen={isCropperOpen}
+          imageSrc={originalPhotoUrl}
+          onClose={() => setIsCropperOpen(false)}
+          onComplete={handleCropComplete}
+        />
+      )}
     </div>
   );
 }

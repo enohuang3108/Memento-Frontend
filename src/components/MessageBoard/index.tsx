@@ -15,5 +15,6 @@ export {
   IllustrationPicker,
   AddIllustrationButton,
 } from "./IllustrationPicker";
+export { ImageCropper, CropPhotoButton } from "./ImageCropper";
 export { PolaroidCanvas } from "./PolaroidCanvas";
 export { DraggableIllustration } from "./DraggableIllustration";

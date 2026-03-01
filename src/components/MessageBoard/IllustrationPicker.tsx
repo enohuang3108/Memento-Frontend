@@ -93,7 +93,7 @@ export function AddIllustrationButton({ onClick }: { onClick: () => void }) {
     <button
       onClick={onClick}
       className="
-        px-3 py-1.5 rounded-full bg-accent text-white text-sm font-medium
+        flex-1 px-3 py-1.5 rounded-full bg-accent text-white text-sm font-medium
         flex items-center justify-center
         hover:bg-accent/90 transition-colors
         border-2 border-foreground
