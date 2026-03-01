@@ -44,7 +44,7 @@ export function DisplayClient({ activityId }: DisplayClientProps) {
   const danmakuRef = useRef<DanmakuType | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const pendingPhotosRef = useRef<Photo[]>([]);
-  const normalIndexRef = useRef(0);
+  const playedPhotoIdsRef = useRef<Set<string>>(new Set());
   const isPlayingPendingRef = useRef(false);
 
   // Initialize danmaku (dynamic import to avoid SSR issues)
@@ -172,30 +172,51 @@ export function DisplayClient({ activityId }: DisplayClientProps) {
         const photoIndex = photos.findIndex((p) => p.id === nextPhoto.id);
         if (photoIndex !== -1) {
           setCurrentIndex(photoIndex);
+          playedPhotoIdsRef.current.add(nextPhoto.id);
         }
       } else {
-        // Random playback
+        // Random playback without repeat
         isPlayingPendingRef.current = false;
-        if (photos.length > 1) {
-          let nextIndex: number;
-          do {
-            nextIndex = Math.floor(Math.random() * photos.length);
-          } while (nextIndex === normalIndexRef.current);
-          normalIndexRef.current = nextIndex;
+
+        // Get unplayed photos
+        const unplayedPhotos = photos.filter(
+          (p) => !playedPhotoIdsRef.current.has(p.id),
+        );
+
+        // If all photos have been played, reset the played set
+        if (unplayedPhotos.length === 0) {
+          playedPhotoIdsRef.current.clear();
+          // Keep current photo as played to avoid immediate repeat
+          const currentPhoto = photos[currentIndex];
+          if (currentPhoto) {
+            playedPhotoIdsRef.current.add(currentPhoto.id);
+          }
+          // Select from all photos except current
+          const availablePhotos = photos.filter(
+            (p) => !playedPhotoIdsRef.current.has(p.id),
+          );
+          if (availablePhotos.length > 0) {
+            const randomPhoto =
+              availablePhotos[
+                Math.floor(Math.random() * availablePhotos.length)
+              ];
+            const nextIndex = photos.findIndex((p) => p.id === randomPhoto.id);
+            playedPhotoIdsRef.current.add(randomPhoto.id);
+            setCurrentIndex(nextIndex);
+          }
+        } else {
+          // Select randomly from unplayed photos
+          const randomPhoto =
+            unplayedPhotos[Math.floor(Math.random() * unplayedPhotos.length)];
+          const nextIndex = photos.findIndex((p) => p.id === randomPhoto.id);
+          playedPhotoIdsRef.current.add(randomPhoto.id);
           setCurrentIndex(nextIndex);
         }
       }
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [photos]);
-
-  // Sync normalIndexRef only during normal playback
-  useEffect(() => {
-    if (!isPlayingPendingRef.current) {
-      normalIndexRef.current = currentIndex;
-    }
-  }, [currentIndex]);
+  }, [photos, currentIndex]);
 
   const currentPhoto = photos[currentIndex];
 
