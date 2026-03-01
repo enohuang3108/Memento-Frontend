@@ -5,6 +5,19 @@ import { Slider as SliderPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
+// Suppress Radix UI Slider pointer capture errors
+// https://github.com/radix-ui/primitives/issues/1956
+if (typeof window !== "undefined") {
+  const originalReleasePointerCapture = Element.prototype.releasePointerCapture;
+  Element.prototype.releasePointerCapture = function (pointerId: number) {
+    try {
+      originalReleasePointerCapture.call(this, pointerId);
+    } catch {
+      // Ignore "Invalid pointer id" errors
+    }
+  };
+}
+
 function Slider({
   className,
   defaultValue,
