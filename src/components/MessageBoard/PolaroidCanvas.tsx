@@ -48,17 +48,20 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
     });
 
     // Load photo and get dimensions
+    // Use data URL instead of blob URL for better compatibility with modern-screenshot
     useEffect(() => {
-      const url = URL.createObjectURL(photo);
-      setPhotoUrl(url);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        setPhotoUrl(dataUrl);
 
-      const img = new Image();
-      img.onload = () => {
-        setPhotoAspectRatio(img.width / img.height);
+        const img = new Image();
+        img.onload = () => {
+          setPhotoAspectRatio(img.width / img.height);
+        };
+        img.src = dataUrl;
       };
-      img.src = url;
-
-      return () => URL.revokeObjectURL(url);
+      reader.readAsDataURL(photo);
     }, [photo]);
 
     // Track card size for illustrations positioning
