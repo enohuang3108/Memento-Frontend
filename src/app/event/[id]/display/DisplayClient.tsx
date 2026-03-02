@@ -46,6 +46,63 @@ export function DisplayClient({ activityId }: DisplayClientProps) {
   const pendingPhotosRef = useRef<Photo[]>([]);
   const playedPhotoIdsRef = useRef<Set<string>>(new Set());
   const isPlayingPendingRef = useRef(false);
+  const preloadedNextRef = useRef<{ index: number; id: string } | null>(null);
+
+  // Preload image helper
+  const preloadImage = useCallback((url: string) => {
+    const img = new Image();
+    img.src = url;
+  }, []);
+
+  // Select next random photo (without marking as played)
+  const selectNextRandom = useCallback(
+    (excludeIndex: number): number | null => {
+      if (photos.length <= 1) return null;
+
+      const unplayedPhotos = photos.filter(
+        (p, i) =>
+          !playedPhotoIdsRef.current.has(p.id) &&
+          i !== excludeIndex &&
+          preloadedNextRef.current?.id !== p.id,
+      );
+
+      if (unplayedPhotos.length === 0) {
+        // All played, select any except current
+        const available = photos.filter((_, i) => i !== excludeIndex);
+        if (available.length === 0) return null;
+        const pick = available[Math.floor(Math.random() * available.length)];
+        return photos.findIndex((p) => p.id === pick.id);
+      }
+
+      const pick =
+        unplayedPhotos[Math.floor(Math.random() * unplayedPhotos.length)];
+      return photos.findIndex((p) => p.id === pick.id);
+    },
+    [photos],
+  );
+
+  // Preload next photo
+  const preloadNext = useCallback(
+    (currentIdx: number) => {
+      // Check pending first
+      if (pendingPhotosRef.current.length > 0) {
+        const nextPending = pendingPhotosRef.current[0];
+        preloadImage(nextPending.fullUrl);
+        const idx = photos.findIndex((p) => p.id === nextPending.id);
+        preloadedNextRef.current =
+          idx !== -1 ? { index: idx, id: nextPending.id } : null;
+        return;
+      }
+
+      // Random selection
+      const nextIdx = selectNextRandom(currentIdx);
+      if (nextIdx !== null && photos[nextIdx]) {
+        preloadImage(photos[nextIdx].fullUrl);
+        preloadedNextRef.current = { index: nextIdx, id: photos[nextIdx].id };
+      }
+    },
+    [photos, preloadImage, selectNextRandom],
+  );
 
   // Initialize danmaku (dynamic import to avoid SSR issues)
   useEffect(() => {
@@ -160,63 +217,64 @@ export function DisplayClient({ activityId }: DisplayClientProps) {
     };
   }, [connectWebSocket]);
 
-  // Photo slideshow with priority queue
+  // Photo slideshow with priority queue and preloading
   useEffect(() => {
     if (photos.length === 0) return;
 
+    // Initial preload for next photo
+    preloadNext(currentIndex);
+
     const timer = setInterval(() => {
+      let nextIndex: number | null = null;
+      let nextPhotoId: string | null = null;
+
       if (pendingPhotosRef.current.length > 0) {
-        // Play pending photo (new upload)
+        // Play pending photo (new upload) - highest priority
         isPlayingPendingRef.current = true;
         const nextPhoto = pendingPhotosRef.current.shift()!;
-        const photoIndex = photos.findIndex((p) => p.id === nextPhoto.id);
-        if (photoIndex !== -1) {
-          setCurrentIndex(photoIndex);
-          playedPhotoIdsRef.current.add(nextPhoto.id);
-        }
-      } else {
-        // Random playback without repeat
+        nextIndex = photos.findIndex((p) => p.id === nextPhoto.id);
+        nextPhotoId = nextPhoto.id;
+      } else if (
+        preloadedNextRef.current &&
+        photos[preloadedNextRef.current.index]?.id ===
+          preloadedNextRef.current.id
+      ) {
+        // Use preloaded photo if still valid
         isPlayingPendingRef.current = false;
-
-        // Get unplayed photos
-        const unplayedPhotos = photos.filter(
-          (p) => !playedPhotoIdsRef.current.has(p.id),
-        );
-
-        // If all photos have been played, reset the played set
-        if (unplayedPhotos.length === 0) {
-          playedPhotoIdsRef.current.clear();
-          // Keep current photo as played to avoid immediate repeat
-          const currentPhoto = photos[currentIndex];
-          if (currentPhoto) {
-            playedPhotoIdsRef.current.add(currentPhoto.id);
-          }
-          // Select from all photos except current
-          const availablePhotos = photos.filter(
-            (p) => !playedPhotoIdsRef.current.has(p.id),
-          );
-          if (availablePhotos.length > 0) {
-            const randomPhoto =
-              availablePhotos[
-                Math.floor(Math.random() * availablePhotos.length)
-              ];
-            const nextIndex = photos.findIndex((p) => p.id === randomPhoto.id);
-            playedPhotoIdsRef.current.add(randomPhoto.id);
-            setCurrentIndex(nextIndex);
-          }
-        } else {
-          // Select randomly from unplayed photos
-          const randomPhoto =
-            unplayedPhotos[Math.floor(Math.random() * unplayedPhotos.length)];
-          const nextIndex = photos.findIndex((p) => p.id === randomPhoto.id);
-          playedPhotoIdsRef.current.add(randomPhoto.id);
-          setCurrentIndex(nextIndex);
+        nextIndex = preloadedNextRef.current.index;
+        nextPhotoId = preloadedNextRef.current.id;
+      } else {
+        // Fallback: select random (preload was invalidated)
+        isPlayingPendingRef.current = false;
+        nextIndex = selectNextRandom(currentIndex);
+        if (nextIndex !== null) {
+          nextPhotoId = photos[nextIndex].id;
         }
+      }
+
+      // Apply the transition
+      if (nextIndex !== null && nextIndex !== -1 && nextPhotoId) {
+        // Reset played set if all photos have been played
+        if (playedPhotoIdsRef.current.size >= photos.length) {
+          playedPhotoIdsRef.current.clear();
+          // Keep current as played to avoid immediate repeat
+          const current = photos[currentIndex];
+          if (current) {
+            playedPhotoIdsRef.current.add(current.id);
+          }
+        }
+
+        playedPhotoIdsRef.current.add(nextPhotoId);
+        setCurrentIndex(nextIndex);
+        preloadedNextRef.current = null;
+
+        // Preload next photo after transition
+        setTimeout(() => preloadNext(nextIndex!), 100);
       }
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [photos, currentIndex]);
+  }, [photos, currentIndex, preloadNext, selectNextRandom]);
 
   const currentPhoto = photos[currentIndex];
 
@@ -246,8 +304,19 @@ export function DisplayClient({ activityId }: DisplayClientProps) {
 
       {/* Photo Counter (dev only) */}
       {process.env.NODE_ENV !== "production" && photos.length > 0 && (
-        <div className="absolute bottom-4 right-4 rounded-lg bg-black/50 px-3 py-1 text-white">
-          {currentIndex + 1} / {photos.length}
+        <div className="absolute bottom-4 right-4 rounded-lg bg-black/50 px-3 py-2 text-white text-sm font-mono space-y-1">
+          <div>
+            播放: {currentIndex + 1} / {photos.length}
+          </div>
+          <div>
+            已播: {playedPhotoIdsRef.current.size} / {photos.length}
+          </div>
+          <div className="text-xs text-zinc-400">
+            ID: {currentPhoto?.id.slice(-8)}
+          </div>
+          <div className="text-xs text-zinc-400">
+            預載: {preloadedNextRef.current?.id.slice(-8) ?? "無"}
+          </div>
         </div>
       )}
 
