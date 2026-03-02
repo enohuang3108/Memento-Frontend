@@ -48,36 +48,31 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
     });
 
     // Load photo and get dimensions
-    // Use data URL instead of blob URL for better compatibility with modern-screenshot
+    // Use Blob URL - the captureCanvas will convert to data URL before screenshot
     useEffect(() => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        console.log("[DEBUG] Photo data URL created:", {
-          length: dataUrl.length,
-          sizeKB: Math.round(dataUrl.length / 1024),
-          prefix: dataUrl.substring(0, 50),
-        });
-        setPhotoUrl(dataUrl);
+      const blobUrl = URL.createObjectURL(photo);
+      console.log("[DEBUG] Photo Blob URL created:", {
+        fileSize: photo.size,
+        fileSizeKB: Math.round(photo.size / 1024),
+      });
 
-        const img = new Image();
-        img.onload = () => {
-          console.log("[DEBUG] Photo dimensions loaded:", {
-            width: img.width,
-            height: img.height,
-            aspectRatio: img.width / img.height,
-          });
-          setPhotoAspectRatio(img.width / img.height);
-        };
-        img.onerror = (err) => {
-          console.error("[DEBUG] Photo load error:", err);
-        };
-        img.src = dataUrl;
+      const img = new Image();
+      img.onload = () => {
+        console.log("[DEBUG] Photo dimensions loaded:", {
+          width: img.width,
+          height: img.height,
+        });
+        setPhotoAspectRatio(img.width / img.height);
+        setPhotoUrl(blobUrl);
       };
-      reader.onerror = (err) => {
-        console.error("[DEBUG] FileReader error:", err);
+      img.onerror = (err) => {
+        console.error("[DEBUG] Photo load error:", err);
       };
-      reader.readAsDataURL(photo);
+      img.src = blobUrl;
+
+      return () => {
+        URL.revokeObjectURL(blobUrl);
+      };
     }, [photo]);
 
     // Track card size for illustrations positioning
