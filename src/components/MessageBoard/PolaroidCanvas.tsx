@@ -48,31 +48,17 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
     });
 
     // Load photo and get dimensions
-    // Use Blob URL - the captureCanvas will convert to data URL before screenshot
     useEffect(() => {
-      const blobUrl = URL.createObjectURL(photo);
-      console.log("[DEBUG] Photo Blob URL created:", {
-        fileSize: photo.size,
-        fileSizeKB: Math.round(photo.size / 1024),
-      });
+      const url = URL.createObjectURL(photo);
+      setPhotoUrl(url); // 立即設定，不等 onload
 
       const img = new Image();
       img.onload = () => {
-        console.log("[DEBUG] Photo dimensions loaded:", {
-          width: img.width,
-          height: img.height,
-        });
         setPhotoAspectRatio(img.width / img.height);
-        setPhotoUrl(blobUrl);
       };
-      img.onerror = (err) => {
-        console.error("[DEBUG] Photo load error:", err);
-      };
-      img.src = blobUrl;
+      img.src = url;
 
-      return () => {
-        URL.revokeObjectURL(blobUrl);
-      };
+      return () => URL.revokeObjectURL(url);
     }, [photo]);
 
     // Track card size for illustrations positioning
@@ -192,10 +178,6 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
               alt="照片"
               className="w-full h-full object-cover"
               draggable={false}
-              onLoad={() => console.log("[DEBUG] <img> element onLoad fired")}
-              onError={(e) =>
-                console.error("[DEBUG] <img> element onError:", e)
-              }
             />
           )}
         </div>
