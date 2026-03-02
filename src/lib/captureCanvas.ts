@@ -3,7 +3,7 @@
  * Uses modern-screenshot to capture DOM elements as images
  */
 
-import { domToBlob } from "modern-screenshot";
+import { domToBlob, domToCanvas } from "modern-screenshot";
 
 export interface CaptureOptions {
   scale?: number;
@@ -68,6 +68,31 @@ export async function captureCanvas(
     console.log("[DEBUG] 所有圖片載入完成，開始截圖");
   } catch (error) {
     console.error("[DEBUG] 圖片載入錯誤:", error);
+  }
+
+  // 診斷：先用 domToCanvas 看 canvas 內容
+  const canvas = await domToCanvas(element, {
+    scale,
+    backgroundColor: "#ffffff",
+  });
+
+  console.log("[DEBUG] Canvas 生成完成:", {
+    width: canvas.width,
+    height: canvas.height,
+  });
+
+  // 檢查 canvas 是否有內容（取樣中心點的像素）
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    // 取樣照片區域的像素（假設照片在上半部）
+    const sampleY = Math.floor(canvas.height * 0.3);
+    const sampleX = Math.floor(canvas.width / 2);
+    const pixel = ctx.getImageData(sampleX, sampleY, 1, 1).data;
+    console.log("[DEBUG] Canvas 像素取樣 (照片區域):", {
+      position: { x: sampleX, y: sampleY },
+      rgba: `rgba(${pixel[0]}, ${pixel[1]}, ${pixel[2]}, ${pixel[3]})`,
+      isWhite: pixel[0] > 250 && pixel[1] > 250 && pixel[2] > 250,
+    });
   }
 
   const blob = await domToBlob(element, {
