@@ -53,13 +53,29 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUrl = e.target?.result as string;
+        console.log("[DEBUG] Photo data URL created:", {
+          length: dataUrl.length,
+          sizeKB: Math.round(dataUrl.length / 1024),
+          prefix: dataUrl.substring(0, 50),
+        });
         setPhotoUrl(dataUrl);
 
         const img = new Image();
         img.onload = () => {
+          console.log("[DEBUG] Photo dimensions loaded:", {
+            width: img.width,
+            height: img.height,
+            aspectRatio: img.width / img.height,
+          });
           setPhotoAspectRatio(img.width / img.height);
         };
+        img.onerror = (err) => {
+          console.error("[DEBUG] Photo load error:", err);
+        };
         img.src = dataUrl;
+      };
+      reader.onerror = (err) => {
+        console.error("[DEBUG] FileReader error:", err);
       };
       reader.readAsDataURL(photo);
     }, [photo]);
@@ -181,6 +197,10 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
               alt="照片"
               className="w-full h-full object-cover"
               draggable={false}
+              onLoad={() => console.log("[DEBUG] <img> element onLoad fired")}
+              onError={(e) =>
+                console.error("[DEBUG] <img> element onError:", e)
+              }
             />
           )}
         </div>

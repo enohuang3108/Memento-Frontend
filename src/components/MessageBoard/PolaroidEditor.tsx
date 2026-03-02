@@ -97,6 +97,7 @@ export function PolaroidEditor({
   const handleComplete = useCallback(async () => {
     if (!canvasRef.current) return;
 
+    console.log("[DEBUG] handleComplete 開始");
     setIsCapturing(true);
 
     // 取消選取狀態以隱藏選取框
@@ -104,12 +105,14 @@ export function PolaroidEditor({
 
     // 等待一個 frame 讓 UI 更新
     await new Promise((resolve) => requestAnimationFrame(resolve));
+    console.log("[DEBUG] UI 更新完成，準備截圖");
 
     try {
       const blob = await captureCanvas(canvasRef.current);
+      console.log("[DEBUG] 截圖成功，blob size:", blob.size);
       onComplete(blob);
     } catch (error) {
-      console.error("截圖失敗:", error);
+      console.error("[DEBUG] 截圖失敗:", error);
     } finally {
       setIsCapturing(false);
     }

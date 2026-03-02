@@ -37,7 +37,16 @@ export function CompletionView({
 }: CompletionViewProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
-  const [previewUrl] = useState(() => URL.createObjectURL(composedBlob));
+  const [previewUrl] = useState(() => {
+    const url = URL.createObjectURL(composedBlob);
+    console.log("[DEBUG] CompletionView - previewUrl 創建:", {
+      blobSize: composedBlob.size,
+      blobSizeKB: Math.round(composedBlob.size / 1024),
+      blobType: composedBlob.type,
+      previewUrl: url,
+    });
+    return url;
+  });
 
   // Trigger confetti only when upload succeeds
   useEffect(() => {
@@ -163,7 +172,15 @@ export function CompletionView({
     <div className="text-center">
       {/* Preview */}
       <div className="mb-6 shadow-lg">
-        <img src={previewUrl} alt="成品預覽" className="w-full h-auto" />
+        <img
+          src={previewUrl}
+          alt="成品預覽"
+          className="w-full h-auto"
+          onLoad={() => console.log("[DEBUG] CompletionView - 預覽圖載入完成")}
+          onError={(e) =>
+            console.error("[DEBUG] CompletionView - 預覽圖載入失敗:", e)
+          }
+        />
       </div>
 
       {/* Actions */}
