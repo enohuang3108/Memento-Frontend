@@ -229,9 +229,6 @@ export function EventClient({ activityId, initialEvent }: EventClientProps) {
 
   return (
     <div className="min-h-screen bg-background pb-24 pt-8 relative overflow-hidden">
-      {/* Logo in top-left corner */}
-      <Logo />
-
       {/* Decorative Background */}
       <GeometricBackground variant="default" />
 
