@@ -11,6 +11,14 @@ import type { Area } from "react-easy-crop";
 import { X, RotateCw, Check } from "lucide-react";
 import { cropImage, type CropArea } from "@/lib/cropImage";
 import { DotPatternSubtle } from "@/components/decorations";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogPortal,
+  DialogOverlay,
+} from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 // Aspect ratio options
 const ASPECT_OPTIONS = [
@@ -88,112 +96,124 @@ export function ImageCropper({
     setCrop({ x: 0, y: 0 });
   }, []);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <DotPatternSubtle className="opacity-30" />
-
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b-2 border-foreground relative z-10">
-        <button
-          onClick={onClose}
-          disabled={isProcessing}
-          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogPortal>
+        <DialogOverlay className="bg-black/80" />
+        <DialogContent
+          showCloseButton={false}
+          className="flex flex-col p-0 gap-0 border-2 border-foreground
+            fixed inset-0 max-w-none w-full h-full translate-x-0 translate-y-0 top-0 left-0 rounded-none
+            sm:inset-auto sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:w-[90vw] sm:max-w-2xl sm:h-[85vh] sm:rounded-xl"
         >
-          <X className="w-6 h-6 text-foreground" />
-        </button>
+          <VisuallyHidden>
+            <DialogTitle>裁切照片</DialogTitle>
+          </VisuallyHidden>
 
-        <h3 className="text-lg font-heading font-bold text-text-main">
-          裁切照片
-        </h3>
+          <DotPatternSubtle className="opacity-30" />
 
-        <button
-          onClick={handleConfirm}
-          disabled={isProcessing || !croppedAreaPixels}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-accent text-white hover:bg-accent/90 transition-colors disabled:opacity-50"
-        >
-          <Check className="w-6 h-6" />
-        </button>
-      </div>
-
-      {/* Aspect Ratio Selector */}
-      <div className="flex items-center justify-center gap-2 p-3 border-b border-foreground/20 relative z-10">
-        {ASPECT_OPTIONS.map((option) => (
-          <button
-            key={option.label}
-            onClick={() => handleAspectChange(option.value)}
-            disabled={isProcessing}
-            className={`
-              px-3 py-1.5 rounded-full text-sm font-medium transition-colors
-              ${
-                aspect === option.value
-                  ? "bg-accent text-white"
-                  : "bg-white border border-foreground/30 text-foreground hover:bg-muted/50"
-              }
-            `}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Cropper Area */}
-      <div className="flex-1 relative z-10">
-        <Cropper
-          image={imageSrc}
-          crop={crop}
-          zoom={zoom}
-          rotation={rotation}
-          aspect={aspect}
-          onCropChange={setCrop}
-          onZoomChange={setZoom}
-          onRotationChange={setRotation}
-          onCropComplete={onCropComplete}
-          showGrid={true}
-          style={{
-            containerStyle: {
-              backgroundColor: "#1e293b",
-            },
-          }}
-        />
-      </div>
-
-      {/* Controls */}
-      <div className="p-4 border-t-2 border-foreground relative z-10">
-        <div className="flex items-center justify-center gap-4">
-          {/* Rotate Button */}
-          <button
-            onClick={handleRotate}
-            disabled={isProcessing}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border-2 border-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
-            style={{ boxShadow: "2px 2px 0px 0px #1e293b" }}
-          >
-            <RotateCw className="w-5 h-5" />
-            <span className="font-medium">旋轉</span>
-          </button>
-
-          {/* Zoom Slider */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-text-muted">縮放</span>
-            <input
-              type="range"
-              min={1}
-              max={3}
-              step={0.1}
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b-2 border-foreground relative z-10">
+            <button
+              onClick={onClose}
               disabled={isProcessing}
-              className="w-24 accent-accent"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+            >
+              <X className="w-6 h-6 text-foreground" />
+            </button>
+
+            <h3 className="text-lg font-heading font-bold text-text-main">
+              裁切照片
+            </h3>
+
+            <button
+              onClick={handleConfirm}
+              disabled={isProcessing || !croppedAreaPixels}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-accent text-white hover:bg-accent/90 transition-colors disabled:opacity-50"
+            >
+              <Check className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Aspect Ratio Selector */}
+          <div className="flex items-center justify-center gap-2 p-3 border-b border-foreground/20 relative z-10">
+            {ASPECT_OPTIONS.map((option) => (
+              <button
+                key={option.label}
+                onClick={() => handleAspectChange(option.value)}
+                disabled={isProcessing}
+                className={`
+                  px-3 py-1.5 rounded-full text-sm font-medium transition-colors
+                  ${
+                    aspect === option.value
+                      ? "bg-accent text-white"
+                      : "bg-white border border-foreground/30 text-foreground hover:bg-muted/50"
+                  }
+                `}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Cropper Area */}
+          <div className="flex-1 relative z-10">
+            <Cropper
+              image={imageSrc}
+              crop={crop}
+              zoom={zoom}
+              rotation={rotation}
+              aspect={aspect}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onRotationChange={setRotation}
+              onCropComplete={onCropComplete}
+              showGrid={true}
+              style={{
+                containerStyle: {
+                  backgroundColor: "#1e293b",
+                },
+              }}
             />
           </div>
-        </div>
 
-        <p className="text-center text-sm text-text-muted mt-3">
-          拖曳調整位置，雙指縮放或使用滑桿
-        </p>
-      </div>
-    </div>
+          {/* Controls */}
+          <div className="p-4 border-t-2 border-foreground relative z-10">
+            <div className="flex items-center justify-center gap-4">
+              {/* Rotate Button */}
+              <button
+                onClick={handleRotate}
+                disabled={isProcessing}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border-2 border-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+                style={{ boxShadow: "2px 2px 0px 0px #1e293b" }}
+              >
+                <RotateCw className="w-5 h-5" />
+                <span className="font-medium">旋轉</span>
+              </button>
+
+              {/* Zoom Slider */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-text-muted">縮放</span>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  disabled={isProcessing}
+                  className="w-24 accent-accent"
+                />
+              </div>
+            </div>
+
+            <p className="text-center text-sm text-text-muted mt-3">
+              拖曳調整位置，雙指縮放或使用滑桿
+            </p>
+          </div>
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
   );
 }
 
