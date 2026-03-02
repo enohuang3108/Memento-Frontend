@@ -167,20 +167,14 @@ export const PolaroidCanvas = forwardRef<HTMLDivElement, PolaroidCanvasProps>(
           boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
         }}
       >
-        {/* Photo Area */}
+        {/* Photo Area - 使用 background-image 以改善 iOS Safari 截圖相容性 */}
         <div
-          className="relative overflow-hidden w-full"
-          style={{ aspectRatio: photoAspectRatio }}
-        >
-          {photoUrl && (
-            <img
-              src={photoUrl}
-              alt="照片"
-              className="w-full h-full object-cover"
-              draggable={false}
-            />
-          )}
-        </div>
+          className="relative overflow-hidden w-full bg-cover bg-center"
+          style={{
+            aspectRatio: photoAspectRatio,
+            backgroundImage: photoUrl ? `url(${photoUrl})` : undefined,
+          }}
+        />
 
         {/* Text Area - auto height */}
         <div
