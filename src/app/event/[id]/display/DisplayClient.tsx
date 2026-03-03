@@ -154,6 +154,13 @@ export function DisplayClient({ activityId }: DisplayClientProps) {
         case "photos_synced":
           if (msg.photos) {
             setPhotos(msg.photos);
+            // 清理不存在的照片 ID，避免重置條件錯誤
+            const validIds = new Set(msg.photos.map((p: Photo) => p.id));
+            playedPhotoIdsRef.current.forEach((id) => {
+              if (!validIds.has(id)) {
+                playedPhotoIdsRef.current.delete(id);
+              }
+            });
           }
           break;
 
@@ -221,6 +228,12 @@ export function DisplayClient({ activityId }: DisplayClientProps) {
   useEffect(() => {
     if (photos.length === 0) return;
 
+    // 確保當前照片被標記為已播放（修復初始照片未標記的問題）
+    const currentPhoto = photos[currentIndex];
+    if (currentPhoto && !playedPhotoIdsRef.current.has(currentPhoto.id)) {
+      playedPhotoIdsRef.current.add(currentPhoto.id);
+    }
+
     // Initial preload for next photo
     preloadNext(currentIndex);
 
@@ -254,8 +267,12 @@ export function DisplayClient({ activityId }: DisplayClientProps) {
 
       // Apply the transition
       if (nextIndex !== null && nextIndex !== -1 && nextPhotoId) {
-        // Reset played set if all photos have been played
-        if (playedPhotoIdsRef.current.size >= photos.length) {
+        // Reset played set if all current photos have been played
+        // 檢查所有現存照片是否都已播放（而非單純比較數量）
+        const allPlayed = photos.every((p) =>
+          playedPhotoIdsRef.current.has(p.id),
+        );
+        if (allPlayed) {
           playedPhotoIdsRef.current.clear();
           // Keep current as played to avoid immediate repeat
           const current = photos[currentIndex];
