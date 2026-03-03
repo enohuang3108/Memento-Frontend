@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -74,6 +75,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-Hant">
+      <head>
+        <Script
+          defer
+          src="https://umami.enohuang.com/script.js"
+          data-website-id="747965cf-7747-4b3f-ad61-8cf1e52e6c82"
+          strategy="afterInteractive"
+        />
+      </head>
       <body className={`${geistSans.variable} antialiased`}>{children}</body>
     </html>
   );
